@@ -1,0 +1,43 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import { GameProvider } from './context/GameContext';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { Layout } from './components/Layout';
+import { LoginPage } from './pages/LoginPage';
+import { DashboardPage } from './pages/DashboardPage';
+import { BuildingsPage } from './pages/BuildingsPage';
+import { ProcessesPage } from './pages/ProcessesPage';
+import { NpcBuyersPage } from './pages/NpcBuyersPage';
+import { DebugPage } from './pages/DebugPage';
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <GameProvider>
+          <Routes>
+            {/* Public route */}
+            <Route path="/login" element={<LoginPage />} />
+
+            {/* Protected routes */}
+            <Route element={<ProtectedRoute />}>
+              <Route element={<Layout />}>
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/buildings" element={<BuildingsPage />} />
+                <Route path="/processes" element={<ProcessesPage />} />
+                <Route path="/npc-buyers" element={<NpcBuyersPage />} />
+                <Route path="/debug" element={<DebugPage />} />
+              </Route>
+            </Route>
+
+            {/* Default redirect */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </GameProvider>
+      </AuthProvider>
+    </BrowserRouter>
+  );
+}
+
+export default App;
