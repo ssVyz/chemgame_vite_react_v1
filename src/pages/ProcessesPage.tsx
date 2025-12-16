@@ -540,7 +540,6 @@ export function ProcessesPage() {
           <button
             onClick={handleInstall}
             className="btn-primary"
-            disabled={!selectedBuilding || !selectedProcess}
           >
             ⚙ Install on Selected Building
           </button>
