@@ -55,16 +55,24 @@ export function ProcessesPage() {
 
   // Auto-select the first process when processes are available and no process is installed/selected
   // This ensures the Install button is enabled even when there's only one process option
+  // This acts as a safety net in case handleBuildingSelect doesn't properly set the process
   useEffect(() => {
+    // Only run if we have a building, no installed process, and allowed processes available
     if (
       selectedBuilding &&
       selectedBuilding.b_proc_installed === null &&
-      allowedProcesses.length > 0 &&
-      !selectedProcess
+      allowedProcesses.length > 0
     ) {
+      // Always select the first process if none is selected, or if the selected process is not in the allowed list
+      // This is especially important when there's only one process available
       const firstProcess = allowedProcesses[0];
-      setSelectedProcess(firstProcess);
-      loadProcessDetails(firstProcess.proc_id);
+      const shouldSelectFirst = !selectedProcess || 
+        !allowedProcesses.some(p => p.proc_id === selectedProcess.proc_id);
+      
+      if (shouldSelectFirst) {
+        setSelectedProcess(firstProcess);
+        loadProcessDetails(firstProcess.proc_id);
+      }
     }
   }, [selectedBuilding, allowedProcesses, selectedProcess, loadProcessDetails]);
 
@@ -72,6 +80,7 @@ export function ProcessesPage() {
     setSelectedBuilding(building);
     setSelectedProcess(null);
     setProcessDetails(null);
+    setAllowedProcesses([]); // Clear allowed processes first
 
     // If building has process installed, load its details
     if (building.b_proc_installed) {
@@ -83,10 +92,13 @@ export function ProcessesPage() {
     if (result.success && result.data) {
       const allowedIds = new Set(result.data.map((a: AllowedProcess) => a.allow_proc));
       const allowed = Array.from(processCatalogue.values()).filter((p) => allowedIds.has(p.proc_id));
+      
+      // Set allowed processes first
       setAllowedProcesses(allowed);
 
       // Auto-select the first allowed process so the Install button works immediately
       // This works for buildings with no process installed, regardless of how many processes are available
+      // The useEffect will also handle this as a safety net
       if (allowed.length > 0 && building.b_proc_installed === null) {
         const firstProcess = allowed[0];
         setSelectedProcess(firstProcess);
@@ -455,19 +467,25 @@ export function ProcessesPage() {
             <label>Available Processes for Selected Building:</label>
             <select
               size={6}
-              value={selectedProcess?.proc_id || ''}
+              value={selectedProcess?.proc_id ? String(selectedProcess.proc_id) : ''}
               onChange={(e) => {
                 const id = parseInt(e.target.value);
-                const proc = allowedProcesses.find((p) => p.proc_id === id);
-                if (proc) handleProcessSelect(proc);
+                if (!isNaN(id)) {
+                  const proc = allowedProcesses.find((p) => p.proc_id === id);
+                  if (proc) handleProcessSelect(proc);
+                }
               }}
               disabled={!selectedBuilding}
             >
-              {allowedProcesses.map((proc) => (
-                <option key={proc.proc_id} value={proc.proc_id}>
-                  [{proc.proc_id}] {proc.proc_name}
-                </option>
-              ))}
+              {allowedProcesses.length === 0 ? (
+                <option value="">No processes available</option>
+              ) : (
+                allowedProcesses.map((proc) => (
+                  <option key={proc.proc_id} value={String(proc.proc_id)}>
+                    [{proc.proc_id}] {proc.proc_name}
+                  </option>
+                ))
+              )}
             </select>
           </div>
 
