@@ -53,6 +53,21 @@ export function ProcessesPage() {
     });
   }, []);
 
+  // Auto-select the first process when processes are available and no process is installed/selected
+  // This ensures the Install button is enabled even when there's only one process option
+  useEffect(() => {
+    if (
+      selectedBuilding &&
+      selectedBuilding.b_proc_installed === null &&
+      allowedProcesses.length > 0 &&
+      !selectedProcess
+    ) {
+      const firstProcess = allowedProcesses[0];
+      setSelectedProcess(firstProcess);
+      loadProcessDetails(firstProcess.proc_id);
+    }
+  }, [selectedBuilding, allowedProcesses, selectedProcess, loadProcessDetails]);
+
   const handleBuildingSelect = async (building: PlayerBuilding) => {
     setSelectedBuilding(building);
     setSelectedProcess(null);
@@ -71,9 +86,11 @@ export function ProcessesPage() {
       setAllowedProcesses(allowed);
 
       // Auto-select the first allowed process so the Install button works immediately
-      if (allowed.length > 0 && !building.b_proc_installed) {
-        setSelectedProcess(allowed[0]);
-        await loadProcessDetails(allowed[0].proc_id);
+      // This works for buildings with no process installed, regardless of how many processes are available
+      if (allowed.length > 0 && building.b_proc_installed === null) {
+        const firstProcess = allowed[0];
+        setSelectedProcess(firstProcess);
+        await loadProcessDetails(firstProcess.proc_id);
       }
     } else {
       setAllowedProcesses([]);
