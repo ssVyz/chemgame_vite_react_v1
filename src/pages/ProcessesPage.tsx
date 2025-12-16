@@ -502,7 +502,7 @@ export function ProcessesPage() {
                   if (proc) handleProcessSelect(proc);
                 }
               }}
-              onFocus={(e) => {
+              onFocus={() => {
                 // When select gets focus and there's only one process, ensure it's selected
                 if (allowedProcesses.length === 1 && !selectedProcess) {
                   handleProcessSelect(allowedProcesses[0]);
