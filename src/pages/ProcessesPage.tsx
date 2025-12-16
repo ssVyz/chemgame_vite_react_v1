@@ -40,18 +40,6 @@ export function ProcessesPage() {
     loadData();
   }, [loadData, lastRefresh]);
 
-  // Load allowed processes when building is selected
-  const loadAllowedProcesses = useCallback(async (building: PlayerBuilding) => {
-    const result = await gameClient.get_allowed_processes(building.building_id);
-    if (result.success && result.data) {
-      const allowedIds = new Set(result.data.map((a: AllowedProcess) => a.allow_proc));
-      const allowed = Array.from(processCatalogue.values()).filter((p) => allowedIds.has(p.proc_id));
-      setAllowedProcesses(allowed);
-    } else {
-      setAllowedProcesses([]);
-    }
-  }, [processCatalogue]);
-
   // Load process details (inputs/outputs)
   const loadProcessDetails = useCallback(async (proc_id: number) => {
     const [inputsResult, outputsResult] = await Promise.all([
@@ -69,11 +57,26 @@ export function ProcessesPage() {
     setSelectedBuilding(building);
     setSelectedProcess(null);
     setProcessDetails(null);
-    await loadAllowedProcesses(building);
 
     // If building has process installed, load its details
     if (building.b_proc_installed) {
       await loadProcessDetails(building.b_proc_installed);
+    }
+
+    // Load allowed processes and auto-select the first one
+    const result = await gameClient.get_allowed_processes(building.building_id);
+    if (result.success && result.data) {
+      const allowedIds = new Set(result.data.map((a: AllowedProcess) => a.allow_proc));
+      const allowed = Array.from(processCatalogue.values()).filter((p) => allowedIds.has(p.proc_id));
+      setAllowedProcesses(allowed);
+
+      // Auto-select the first allowed process so the Install button works immediately
+      if (allowed.length > 0 && !building.b_proc_installed) {
+        setSelectedProcess(allowed[0]);
+        await loadProcessDetails(allowed[0].proc_id);
+      }
+    } else {
+      setAllowedProcesses([]);
     }
   };
 
