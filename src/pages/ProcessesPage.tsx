@@ -76,6 +76,20 @@ export function ProcessesPage() {
     }
   }, [selectedBuilding, allowedProcesses, selectedProcess, loadProcessDetails]);
 
+  // Additional effect to ensure single process is always selected
+  useEffect(() => {
+    if (
+      selectedBuilding &&
+      selectedBuilding.b_proc_installed === null &&
+      allowedProcesses.length === 1 &&
+      (!selectedProcess || selectedProcess.proc_id !== allowedProcesses[0].proc_id)
+    ) {
+      const firstProcess = allowedProcesses[0];
+      setSelectedProcess(firstProcess);
+      loadProcessDetails(firstProcess.proc_id);
+    }
+  }, [selectedBuilding, allowedProcesses, selectedProcess, loadProcessDetails]);
+
   const handleBuildingSelect = async (building: PlayerBuilding) => {
     setSelectedBuilding(building);
     setSelectedProcess(null);
@@ -115,21 +129,34 @@ export function ProcessesPage() {
   };
 
   const handleInstall = async () => {
-    if (!selectedBuilding || !selectedProcess) {
-      setStatus({ type: 'error', message: 'Please select a building and a process' });
+    if (!selectedBuilding) {
+      setStatus({ type: 'error', message: 'Please select a building' });
+      return;
+    }
+
+    // Auto-select the single process if there's only one available and none is selected
+    let processToInstall = selectedProcess;
+    if (!processToInstall && allowedProcesses.length === 1) {
+      processToInstall = allowedProcesses[0];
+      setSelectedProcess(processToInstall);
+      await loadProcessDetails(processToInstall.proc_id);
+    }
+
+    if (!processToInstall) {
+      setStatus({ type: 'error', message: 'Please select a process' });
       return;
     }
 
     const buildingInfo = buildingsCatalogue.get(selectedBuilding.building_id);
     const buildingName = buildingInfo?.building_name || selectedBuilding.building_code;
 
-    if (!window.confirm(`Install '${selectedProcess.proc_name}' on '${buildingName}'?`)) {
+    if (!window.confirm(`Install '${processToInstall.proc_name}' on '${buildingName}'?`)) {
       return;
     }
 
-    const result = await gameClient.install_process(selectedBuilding.this_building_id, selectedProcess.proc_id);
+    const result = await gameClient.install_process(selectedBuilding.this_building_id, processToInstall.proc_id);
     if (result.success) {
-      setStatus({ type: 'success', message: `Started installing ${selectedProcess.proc_name}` });
+      setStatus({ type: 'success', message: `Started installing ${processToInstall.proc_name}` });
       loadData();
     } else {
       setStatus({ type: 'error', message: `Failed to install: ${result.error}` });
@@ -467,12 +494,18 @@ export function ProcessesPage() {
             <label>Available Processes for Selected Building:</label>
             <select
               size={6}
-              value={selectedProcess?.proc_id ? String(selectedProcess.proc_id) : ''}
+              value={selectedProcess?.proc_id ? String(selectedProcess.proc_id) : (allowedProcesses.length === 1 ? String(allowedProcesses[0].proc_id) : '')}
               onChange={(e) => {
                 const id = parseInt(e.target.value);
                 if (!isNaN(id)) {
                   const proc = allowedProcesses.find((p) => p.proc_id === id);
                   if (proc) handleProcessSelect(proc);
+                }
+              }}
+              onFocus={(e) => {
+                // When select gets focus and there's only one process, ensure it's selected
+                if (allowedProcesses.length === 1 && !selectedProcess) {
+                  handleProcessSelect(allowedProcesses[0]);
                 }
               }}
               disabled={!selectedBuilding}
