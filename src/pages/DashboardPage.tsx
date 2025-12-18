@@ -93,6 +93,48 @@ export function DashboardPage() {
 
   const disposeInfo = getDisposeInfo();
 
+  // Filter and sort materials by phase
+  const getMaterialsByPhase = (phases: string[]) => {
+    return materials
+      .filter((mat) => {
+        const info = materialsCatalogue.get(mat.res_id);
+        const phase = info?.res_phase?.toLowerCase();
+        return phase && phases.some(p => p.toLowerCase() === phase);
+      })
+      .sort((a, b) => a.res_id - b.res_id);
+  };
+
+  const dryMaterials = getMaterialsByPhase(['solid', 'dry']);
+  const fluidMaterials = getMaterialsByPhase(['fluid']);
+  const gasMaterials = getMaterialsByPhase(['gas']);
+
+  // Helper to render material table rows
+  const renderMaterialRows = (mats: PlayerMaterial[]) => {
+    if (mats.length === 0) {
+      return (
+        <tr>
+          <td colSpan={5} className="empty-row">No materials in this storage</td>
+        </tr>
+      );
+    }
+    return mats.map((mat) => {
+      const info = materialsCatalogue.get(mat.res_id);
+      return (
+        <tr
+          key={mat.res_id}
+          onClick={() => setSelectedMaterial(mat)}
+          className={selectedMaterial?.res_id === mat.res_id ? 'selected' : ''}
+        >
+          <td>{mat.res_id}</td>
+          <td>{mat.res_code}</td>
+          <td>{info?.res_name || mat.res_code}</td>
+          <td>{info?.res_phase || '-'}</td>
+          <td className="number">{formatNumber(mat.amount)}</td>
+        </tr>
+      );
+    });
+  };
+
   if (loading && !player) {
     return <div className="loading">Loading dashboard...</div>;
   }
@@ -138,55 +180,31 @@ export function DashboardPage() {
                 <span className="stat-value">{formatNumber(player.build_space_occupied)}</span>
               </div>
             </div>
-            <div className="stat-row">
-              <div className="stat-item">
-                <span className="stat-label">Dry Storage:</span>
-                <span className="stat-value">{formatNumber(player.player_dry_storage)}</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-label">Dry Reserved:</span>
-                <span className="stat-value">{formatNumber(player.player_dry_storage_reserved)}</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-label">Dry Occupied:</span>
-                <span className="stat-value">{formatNumber(player.player_dry_storage_occupied)}</span>
-              </div>
-            </div>
-            <div className="stat-row">
-              <div className="stat-item">
-                <span className="stat-label">Fluid Storage:</span>
-                <span className="stat-value">{formatNumber(player.player_fluid_storage)}</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-label">Fluid Reserved:</span>
-                <span className="stat-value">{formatNumber(player.player_fluid_storage_reserved)}</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-label">Fluid Occupied:</span>
-                <span className="stat-value">{formatNumber(player.player_fluid_storage_occupied)}</span>
-              </div>
-            </div>
-            <div className="stat-row">
-              <div className="stat-item">
-                <span className="stat-label">Gas Storage:</span>
-                <span className="stat-value">{formatNumber(player.player_gas_storage)}</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-label">Gas Reserved:</span>
-                <span className="stat-value">{formatNumber(player.player_gas_storage_reserved)}</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-label">Gas Occupied:</span>
-                <span className="stat-value">{formatNumber(player.player_gas_storage_occupied)}</span>
-              </div>
-            </div>
           </div>
         )}
       </section>
 
-      {/* Resources Inventory */}
-      <section className="resources-section">
-        <h3>Resources Inventory</h3>
+      {/* Dry Storage */}
+      <section className="dry-storage-section">
+        <h3>Dry Storage</h3>
+        {player && (
+          <div className="stats-grid" style={{ marginBottom: '15px' }}>
+            <div className="stat-row">
+              <div className="stat-item">
+                <span className="stat-label">Capacity:</span>
+                <span className="stat-value">{formatNumber(player.player_dry_storage)}</span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-label">Reserved:</span>
+                <span className="stat-value">{formatNumber(player.player_dry_storage_reserved)}</span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-label">Occupied:</span>
+                <span className="stat-value">{formatNumber(player.player_dry_storage_occupied)}</span>
+              </div>
+            </div>
+          </div>
+        )}
         <table className="data-table">
           <thead>
             <tr>
@@ -198,28 +216,81 @@ export function DashboardPage() {
             </tr>
           </thead>
           <tbody>
-            {materials.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="empty-row">No materials in inventory</td>
-              </tr>
-            ) : (
-              materials.map((mat) => {
-                const info = materialsCatalogue.get(mat.res_id);
-                return (
-                  <tr
-                    key={mat.res_id}
-                    onClick={() => setSelectedMaterial(mat)}
-                    className={selectedMaterial?.res_id === mat.res_id ? 'selected' : ''}
-                  >
-                    <td>{mat.res_id}</td>
-                    <td>{mat.res_code}</td>
-                    <td>{info?.res_name || mat.res_code}</td>
-                    <td>{info?.res_phase || '-'}</td>
-                    <td className="number">{formatNumber(mat.amount)}</td>
-                  </tr>
-                );
-              })
-            )}
+            {renderMaterialRows(dryMaterials)}
+          </tbody>
+        </table>
+      </section>
+
+      {/* Fluid Storage */}
+      <section className="fluid-storage-section">
+        <h3>Fluid Storage</h3>
+        {player && (
+          <div className="stats-grid" style={{ marginBottom: '15px' }}>
+            <div className="stat-row">
+              <div className="stat-item">
+                <span className="stat-label">Capacity:</span>
+                <span className="stat-value">{formatNumber(player.player_fluid_storage)}</span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-label">Reserved:</span>
+                <span className="stat-value">{formatNumber(player.player_fluid_storage_reserved)}</span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-label">Occupied:</span>
+                <span className="stat-value">{formatNumber(player.player_fluid_storage_occupied)}</span>
+              </div>
+            </div>
+          </div>
+        )}
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Code</th>
+              <th>Name</th>
+              <th>Phase</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {renderMaterialRows(fluidMaterials)}
+          </tbody>
+        </table>
+      </section>
+
+      {/* Gas Storage */}
+      <section className="gas-storage-section">
+        <h3>Gas Storage</h3>
+        {player && (
+          <div className="stats-grid" style={{ marginBottom: '15px' }}>
+            <div className="stat-row">
+              <div className="stat-item">
+                <span className="stat-label">Capacity:</span>
+                <span className="stat-value">{formatNumber(player.player_gas_storage)}</span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-label">Reserved:</span>
+                <span className="stat-value">{formatNumber(player.player_gas_storage_reserved)}</span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-label">Occupied:</span>
+                <span className="stat-value">{formatNumber(player.player_gas_storage_occupied)}</span>
+              </div>
+            </div>
+          </div>
+        )}
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Code</th>
+              <th>Name</th>
+              <th>Phase</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {renderMaterialRows(gasMaterials)}
           </tbody>
         </table>
       </section>

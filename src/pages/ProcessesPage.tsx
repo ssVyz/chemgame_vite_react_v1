@@ -28,7 +28,14 @@ export function ProcessesPage() {
 
     const result = await gameClient.get_player_buildings();
     if (result.success && result.data) {
-      setBuildings(result.data);
+      // Sort by building_id first, then this_building_id
+      const sorted = [...result.data].sort((a, b) => {
+        if (a.building_id !== b.building_id) {
+          return a.building_id - b.building_id;
+        }
+        return a.this_building_id - b.this_building_id;
+      });
+      setBuildings(sorted);
     } else {
       setError(result.error || 'Failed to load buildings');
     }

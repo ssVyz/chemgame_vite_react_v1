@@ -25,7 +25,11 @@ export function NpcBuyersPage() {
     ]);
 
     if (buyersResult.success && buyersResult.data) {
-      setBuyers(buyersResult.data);
+      // Sort by buyer name
+      const sorted = [...buyersResult.data].sort((a, b) => 
+        a.npc_buyer_name.localeCompare(b.npc_buyer_name)
+      );
+      setBuyers(sorted);
     } else {
       setError(buyersResult.error || 'Failed to load NPC buyers');
     }
