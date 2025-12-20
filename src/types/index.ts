@@ -104,6 +104,33 @@ export interface NpcBuyer {
   current_demand: number;
 }
 
+export interface StorageExtensionCatalogue {
+  s_extension_id: number;
+  s_extension_code: string;
+  s_extension_name: string;
+  s_extension_cost: number;
+  s_extension_space_req: number;
+  s_extension_build_time: number;
+  s_extension_add_dry_storage: number;
+  s_extension_add_fluid_storage: number;
+  s_extension_add_gas_storage: number;
+}
+
+export interface PlayerStorageExtension {
+  this_s_extension_id: number;
+  created_at: string;
+  s_extension_id: number;
+  s_ext_current_status: 'under_construction' | 'completed';
+  s_ext_finished_building: boolean;
+}
+
+export interface PlayerExpansion {
+  entry_id: number;
+  player_auth: string;
+  expansion_level: number;
+  base_cost: number;
+}
+
 // API response wrapper
 export interface ApiResult<T> {
   success: boolean;

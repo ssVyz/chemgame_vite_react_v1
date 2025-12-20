@@ -13,6 +13,9 @@ import type {
   EventSchedule,
   ProcessSchedule,
   NpcBuyer,
+  StorageExtensionCatalogue,
+  PlayerStorageExtension,
+  PlayerExpansion,
 } from '../types';
 import { AuthApiError, Session, User } from '@supabase/supabase-js';
 
@@ -505,6 +508,123 @@ class GameClient {
   }
 
   // ========================================================================
+  // Storage Extensions Methods
+  // ========================================================================
+
+  async get_storage_extensions_catalogue(): Promise<ApiResult<StorageExtensionCatalogue[]>> {
+    try {
+      const { data, error } = await supabase
+        .from('storage_extensions_catalogue')
+        .select('*');
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: data as StorageExtensionCatalogue[] };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  async get_player_storage_extensions(): Promise<ApiResult<PlayerStorageExtension[]>> {
+    try {
+      const { data, error } = await supabase
+        .from('player_storage_extensions_inventory')
+        .select('*');
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: data as PlayerStorageExtension[] };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  async build_new_storage_extension(s_extension_id: number): Promise<ApiResult<PlayerStorageExtension>> {
+    try {
+      const { data, error } = await supabase.rpc('build_new_storage_extension', {
+        p_s_extension_id: s_extension_id,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: data as PlayerStorageExtension };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  async finish_storage_extension_construction(): Promise<ApiResult<PlayerStorageExtension[]>> {
+    try {
+      const { data, error } = await supabase.rpc('finish_storage_extension_construction');
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: data as PlayerStorageExtension[] };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  async demolish_storage_extension(this_s_extension_id: number): Promise<ApiResult<unknown>> {
+    try {
+      const { data, error } = await supabase.rpc('demolish_storage_extension', {
+        p_this_s_extension_id: this_s_extension_id,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  // ========================================================================
+  // Building Space Upgrade Methods
+  // ========================================================================
+
+  async get_player_expansions(): Promise<ApiResult<PlayerExpansion | null>> {
+    try {
+      const { data, error } = await supabase
+        .from('player_expansions')
+        .select('*')
+        .maybeSingle();
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: data as PlayerExpansion | null };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  async upgrade_building_space(): Promise<ApiResult<PlayerExpansion>> {
+    try {
+      const { data, error } = await supabase.rpc('upgrade_building_space');
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: data as PlayerExpansion };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  // ========================================================================
   // Utility Methods
   // ========================================================================
 
@@ -514,6 +634,7 @@ class GameClient {
   async runResolvers(): Promise<void> {
     await this.resolve_scheduled_cash();
     await this.finish_construction();
+    await this.finish_storage_extension_construction();
     await this.resolve_building_processes();
     await this.resolve_process_runs();
   }

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { gameClient } from '../api/gameClient';
 import { useGame } from '../context/GameContext';
-import type { PlayerBuilding, BuildingCatalogue } from '../types';
+import type { PlayerBuilding, BuildingCatalogue, StorageExtensionCatalogue, PlayerStorageExtension, Player } from '../types';
 
 export function BuildingsPage() {
   const { buildingsCatalogue, processCatalogue, lastRefresh } = useGame();
@@ -13,6 +13,14 @@ export function BuildingsPage() {
   // Selection state
   const [selectedBuilding, setSelectedBuilding] = useState<PlayerBuilding | null>(null);
   const [selectedCatalogueBuilding, setSelectedCatalogueBuilding] = useState<BuildingCatalogue | null>(null);
+
+  // Storage Extensions state
+  const [player, setPlayer] = useState<Player | null>(null);
+  const [storageExtensionsCatalogue, setStorageExtensionsCatalogue] = useState<StorageExtensionCatalogue[]>([]);
+  const [playerStorageExtensions, setPlayerStorageExtensions] = useState<PlayerStorageExtension[]>([]);
+  const [selectedCatalogueExtension, setSelectedCatalogueExtension] = useState<StorageExtensionCatalogue | null>(null);
+  const [selectedPlayerExtension, setSelectedPlayerExtension] = useState<PlayerStorageExtension | null>(null);
+  const [storageExtensionsStatus, setStorageExtensionsStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -30,6 +38,24 @@ export function BuildingsPage() {
       setBuildings(sorted);
     } else {
       setError(result.error || 'Failed to load buildings');
+    }
+
+    // Load player data for storage extensions
+    const playerResult = await gameClient.get_player_data();
+    if (playerResult.success && playerResult.data) {
+      setPlayer(playerResult.data);
+    }
+
+    // Load storage extensions catalogue
+    const catalogueResult = await gameClient.get_storage_extensions_catalogue();
+    if (catalogueResult.success && catalogueResult.data) {
+      setStorageExtensionsCatalogue(catalogueResult.data);
+    }
+
+    // Load player storage extensions
+    const extensionsResult = await gameClient.get_player_storage_extensions();
+    if (extensionsResult.success && extensionsResult.data) {
+      setPlayerStorageExtensions(extensionsResult.data);
     }
 
     setLoading(false);
@@ -105,6 +131,87 @@ export function BuildingsPage() {
     } else {
       setStatus({ type: 'error', message: `Failed to demolish: ${result.error}` });
     }
+  };
+
+  // Storage Extensions handlers
+  const handleBuildStorageExtension = async () => {
+    if (!selectedCatalogueExtension) {
+      setStorageExtensionsStatus({ type: 'error', message: 'Please select a storage extension to build' });
+      return;
+    }
+
+    if (!window.confirm(`Build '${selectedCatalogueExtension.s_extension_name}'?`)) {
+      return;
+    }
+
+    const result = await gameClient.build_new_storage_extension(selectedCatalogueExtension.s_extension_id);
+    if (result.success) {
+      setStorageExtensionsStatus({ type: 'success', message: `Started construction of ${selectedCatalogueExtension.s_extension_name}` });
+      loadData();
+    } else {
+      // Parse error message for user-friendly feedback
+      let errorMsg = result.error || 'Failed to build storage extension';
+      if (errorMsg.toLowerCase().includes('not enough cash')) {
+        errorMsg = 'Not enough cash to build this storage extension';
+      } else if (errorMsg.toLowerCase().includes('not enough building space')) {
+        errorMsg = 'Not enough building space to build this storage extension';
+      }
+      setStorageExtensionsStatus({ type: 'error', message: errorMsg });
+    }
+  };
+
+  const handleDemolishStorageExtension = async () => {
+    if (!selectedPlayerExtension) {
+      setStorageExtensionsStatus({ type: 'error', message: 'Please select a storage extension to demolish' });
+      return;
+    }
+
+    if (selectedPlayerExtension.s_ext_current_status !== 'completed') {
+      setStorageExtensionsStatus({
+        type: 'error',
+        message: 'Only completed storage extensions can be demolished',
+      });
+      return;
+    }
+
+    const extensionInfo = storageExtensionsCatalogue.find(ext => ext.s_extension_id === selectedPlayerExtension.s_extension_id);
+    const extensionName = extensionInfo?.s_extension_name || `Extension ${selectedPlayerExtension.s_extension_id}`;
+
+    if (!window.confirm(
+      `Demolish '${extensionName}' (ID: ${selectedPlayerExtension.this_s_extension_id})?\n\nThis action cannot be undone.`
+    )) {
+      return;
+    }
+
+    const result = await gameClient.demolish_storage_extension(selectedPlayerExtension.this_s_extension_id);
+    if (result.success) {
+      setStorageExtensionsStatus({ type: 'success', message: `Demolished '${extensionName}'` });
+      setSelectedPlayerExtension(null);
+      loadData();
+    } else {
+      // Parse error message for user-friendly feedback
+      let errorMsg = result.error || 'Failed to demolish storage extension';
+      if (errorMsg.toLowerCase().includes('cannot remove')) {
+        errorMsg = 'Cannot demolish: Storage is in use. Free up materials first.';
+      }
+      setStorageExtensionsStatus({ type: 'error', message: errorMsg });
+    }
+  };
+
+  // Calculate remaining build time for storage extension
+  const getRemainingBuildTime = (extension: PlayerStorageExtension, catalogue: StorageExtensionCatalogue | undefined): number | null => {
+    if (extension.s_ext_current_status === 'completed' || extension.s_ext_finished_building) {
+      return null;
+    }
+    if (!catalogue) return null;
+
+    const startTime = new Date(extension.created_at).getTime();
+    const buildTimeMs = catalogue.s_extension_build_time * 60 * 1000;
+    const endTime = startTime + buildTimeMs;
+    const now = Date.now();
+    const remaining = endTime - now;
+
+    return remaining > 0 ? Math.ceil(remaining / 1000 / 60) : 0;
   };
 
   const catalogueArray = Array.from(buildingsCatalogue.values());
@@ -217,6 +324,130 @@ export function BuildingsPage() {
           {status.message}
         </div>
       )}
+
+      {/* Storage Extensions Section */}
+      <section className="storage-extensions-section" style={{ marginTop: '40px' }}>
+        <h3>📦 Storage Extensions</h3>
+
+        <div className="buildings-layout">
+          {/* Left: Player's Storage Extensions */}
+          <section className="current-storage-extensions">
+            <h4>Your Storage Extensions</h4>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Extension</th>
+                  <th>Status</th>
+                  <th>Remaining Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                {playerStorageExtensions.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="empty-row">No storage extensions yet</td>
+                  </tr>
+                ) : (
+                  playerStorageExtensions.map((ext) => {
+                    const extensionInfo = storageExtensionsCatalogue.find(cat => cat.s_extension_id === ext.s_extension_id);
+                    const remainingTime = getRemainingBuildTime(ext, extensionInfo);
+                    const isCompleted = ext.s_ext_current_status === 'completed' || ext.s_ext_finished_building;
+
+                    return (
+                      <tr
+                        key={ext.this_s_extension_id}
+                        onClick={() => setSelectedPlayerExtension(ext)}
+                        className={selectedPlayerExtension?.this_s_extension_id === ext.this_s_extension_id ? 'selected' : ''}
+                      >
+                        <td>{ext.this_s_extension_id}</td>
+                        <td>{extensionInfo?.s_extension_name || `Extension ${ext.s_extension_id}`}</td>
+                        <td>{isCompleted ? 'Completed' : 'Under Construction'}</td>
+                        <td>
+                          {isCompleted ? '-' : remainingTime !== null ? `${remainingTime} min` : 'Ready'}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+
+            <div className="demolish-controls">
+              <button onClick={handleDemolishStorageExtension} className="btn-danger" disabled={!selectedPlayerExtension}>
+                🔨 Demolish Selected Extension
+              </button>
+              <span className="hint">(Only completed extensions can be demolished)</span>
+            </div>
+          </section>
+
+          {/* Right: Build New Storage Extension */}
+          <section className="build-new-storage-extension">
+            <h4>Build New Storage Extension</h4>
+            <div className="catalogue-list">
+              <label>Available Extensions:</label>
+              <select
+                size={8}
+                value={selectedCatalogueExtension?.s_extension_id || ''}
+                onChange={(e) => {
+                  const id = parseInt(e.target.value);
+                  setSelectedCatalogueExtension(storageExtensionsCatalogue.find(ext => ext.s_extension_id === id) || null);
+                }}
+              >
+                {storageExtensionsCatalogue.map((ext) => (
+                  <option key={ext.s_extension_id} value={ext.s_extension_id}>
+                    [{ext.s_extension_id}] {ext.s_extension_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {selectedCatalogueExtension && (
+              <div className="building-details">
+                <p><strong>Name:</strong> {selectedCatalogueExtension.s_extension_name}</p>
+                <p><strong>Code:</strong> {selectedCatalogueExtension.s_extension_code}</p>
+                <p><strong>Cost:</strong> {formatNumber(selectedCatalogueExtension.s_extension_cost)} cash</p>
+                <p><strong>Space Required:</strong> {selectedCatalogueExtension.s_extension_space_req}</p>
+                <p><strong>Build Time:</strong> {selectedCatalogueExtension.s_extension_build_time} minutes</p>
+                <p><strong>Adds Storage:</strong></p>
+                <ul style={{ marginLeft: '20px', marginTop: '5px' }}>
+                  <li>Dry: {formatNumber(selectedCatalogueExtension.s_extension_add_dry_storage)}</li>
+                  <li>Fluid: {formatNumber(selectedCatalogueExtension.s_extension_add_fluid_storage)}</li>
+                  <li>Gas: {formatNumber(selectedCatalogueExtension.s_extension_add_gas_storage)}</li>
+                </ul>
+              </div>
+            )}
+
+            <button
+              onClick={handleBuildStorageExtension}
+              className="btn-primary"
+              disabled={
+                !selectedCatalogueExtension ||
+                !player ||
+                (player.player_cash < (selectedCatalogueExtension?.s_extension_cost || 0)) ||
+                ((player.building_space - player.build_space_occupied) < (selectedCatalogueExtension?.s_extension_space_req || 0))
+              }
+            >
+              Build Selected
+            </button>
+            {selectedCatalogueExtension && player && (
+              <div style={{ marginTop: '10px', fontSize: '0.9em', color: '#666' }}>
+                {player.player_cash < selectedCatalogueExtension.s_extension_cost && (
+                  <div style={{ color: '#d32f2f' }}>Insufficient cash</div>
+                )}
+                {(player.building_space - player.build_space_occupied) < selectedCatalogueExtension.s_extension_space_req && (
+                  <div style={{ color: '#d32f2f' }}>Insufficient building space</div>
+                )}
+              </div>
+            )}
+          </section>
+        </div>
+
+        {storageExtensionsStatus && (
+          <div className={`status-message ${storageExtensionsStatus.type}`} style={{ marginTop: '15px' }}>
+            {storageExtensionsStatus.message}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

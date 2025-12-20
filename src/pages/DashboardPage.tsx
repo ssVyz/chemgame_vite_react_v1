@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { gameClient } from '../api/gameClient';
 import { useGame } from '../context/GameContext';
-import type { Player, PlayerMaterial } from '../types';
+import type { Player, PlayerMaterial, PlayerExpansion } from '../types';
 
 export function DashboardPage() {
   const { materialsCatalogue, lastRefresh } = useGame();
@@ -14,6 +14,10 @@ export function DashboardPage() {
   const [selectedMaterial, setSelectedMaterial] = useState<PlayerMaterial | null>(null);
   const [disposeAmount, setDisposeAmount] = useState('1');
   const [disposeStatus, setDisposeStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  // Building Space Upgrade state
+  const [playerExpansion, setPlayerExpansion] = useState<PlayerExpansion | null>(null);
+  const [upgradeStatus, setUpgradeStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -29,6 +33,15 @@ export function DashboardPage() {
     const materialsResult = await gameClient.get_player_materials();
     if (materialsResult.success && materialsResult.data) {
       setMaterials(materialsResult.data);
+    }
+
+    // Load player expansions
+    const expansionResult = await gameClient.get_player_expansions();
+    if (expansionResult.success && expansionResult.data) {
+      setPlayerExpansion(expansionResult.data);
+    } else if (expansionResult.success && !expansionResult.data) {
+      // No expansion row exists yet, assume level 1
+      setPlayerExpansion(null);
     }
 
     setLoading(false);
@@ -92,6 +105,49 @@ export function DashboardPage() {
   };
 
   const disposeInfo = getDisposeInfo();
+
+  // Building Space Upgrade handlers
+  const handleUpgradeBuildingSpace = async () => {
+    if (!player) {
+      setUpgradeStatus({ type: 'error', message: 'Player data not loaded' });
+      return;
+    }
+
+    const expansionLevel = playerExpansion?.expansion_level || 1;
+    const baseCost = playerExpansion?.base_cost || 500;
+    const cost = baseCost * Math.pow(10, expansionLevel);
+
+    if (player.player_cash < cost) {
+      setUpgradeStatus({ type: 'error', message: 'Not enough cash to upgrade building space' });
+      return;
+    }
+
+    if (!window.confirm(
+      `Upgrade building space?\n\nCurrent level: ${expansionLevel}\nCost: ${formatNumber(cost)} cash\nGrants: +5 building space`
+    )) {
+      return;
+    }
+
+    const result = await gameClient.upgrade_building_space();
+    if (result.success) {
+      setUpgradeStatus({ type: 'success', message: `Building space upgraded to level ${result.data?.expansion_level || expansionLevel + 1}` });
+      loadData();
+    } else {
+      // Parse error message for user-friendly feedback
+      let errorMsg = result.error || 'Failed to upgrade building space';
+      if (errorMsg.toLowerCase().includes('not enough cash')) {
+        errorMsg = 'Not enough cash to upgrade building space';
+      }
+      setUpgradeStatus({ type: 'error', message: errorMsg });
+    }
+  };
+
+  // Calculate next upgrade cost
+  const getNextUpgradeCost = (): number => {
+    const expansionLevel = playerExpansion?.expansion_level || 1;
+    const baseCost = playerExpansion?.base_cost || 500;
+    return baseCost * Math.pow(10, expansionLevel);
+  };
 
   // Filter and sort materials by phase
   const getMaterialsByPhase = (phases: string[]) => {
@@ -173,15 +229,48 @@ export function DashboardPage() {
             <div className="stat-row">
               <div className="stat-item">
                 <span className="stat-label">Building Space:</span>
-                <span className="stat-value">{formatNumber(player.building_space)}</span>
+                <span className="stat-value">
+                  {formatNumber(player.build_space_occupied)} / {formatNumber(player.building_space)}
+                </span>
               </div>
               <div className="stat-item">
-                <span className="stat-label">Space Occupied:</span>
-                <span className="stat-value">{formatNumber(player.build_space_occupied)}</span>
+                <span className="stat-label">Expansion Level:</span>
+                <span className="stat-value">{playerExpansion?.expansion_level || 1}</span>
               </div>
             </div>
           </div>
         )}
+
+        {/* Building Space Upgrade */}
+        <div className="building-space-upgrade" style={{ marginTop: '20px', padding: '15px', border: '1px solid #ddd', borderRadius: '4px' }}>
+          <h4>🏗️ Building Space Upgrade</h4>
+          {player && (
+            <>
+              <div style={{ marginBottom: '10px' }}>
+                <p><strong>Current Space:</strong> {formatNumber(player.build_space_occupied)} / {formatNumber(player.building_space)}</p>
+                <p><strong>Next Upgrade Cost:</strong> {formatNumber(getNextUpgradeCost())} cash</p>
+                <p><strong>Grants:</strong> +5 building space</p>
+              </div>
+              <button
+                onClick={handleUpgradeBuildingSpace}
+                className="btn-primary"
+                disabled={player.player_cash < getNextUpgradeCost()}
+              >
+                Upgrade Building Space
+              </button>
+              {player.player_cash < getNextUpgradeCost() && (
+                <div style={{ marginTop: '10px', color: '#d32f2f', fontSize: '0.9em' }}>
+                  Insufficient cash
+                </div>
+              )}
+              {upgradeStatus && (
+                <div className={`status-message ${upgradeStatus.type}`} style={{ marginTop: '10px' }}>
+                  {upgradeStatus.message}
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </section>
 
       {/* Dry Storage */}
