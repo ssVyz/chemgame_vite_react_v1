@@ -16,6 +16,7 @@ import type {
   StorageExtensionCatalogue,
   PlayerStorageExtension,
   PlayerExpansion,
+  MarketSellOrder,
 } from '../types';
 import { AuthApiError, Session, User } from '@supabase/supabase-js';
 
@@ -502,6 +503,75 @@ class GameClient {
       }
 
       return { success: true, data: data as number };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  // ========================================================================
+  // Market Methods
+  // ========================================================================
+
+  async get_market_sell_orders(): Promise<ApiResult<MarketSellOrder[]>> {
+    try {
+      const { data, error } = await supabase.rpc('get_market_sell_orders');
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: data as MarketSellOrder[] };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  async create_sell_order(p_res_id: number, p_amount: number, p_price: number): Promise<ApiResult<MarketSellOrder>> {
+    try {
+      const { data, error } = await supabase.rpc('create_sell_order', {
+        p_res_id,
+        p_amount,
+        p_price,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: data as MarketSellOrder };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  async cancel_sell_order(p_sell_order_id: number): Promise<ApiResult<unknown>> {
+    try {
+      const { data, error } = await supabase.rpc('cancel_sell_order', {
+        p_sell_order_id,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  async buy_from_sell_order(p_sell_order_id: number, p_amount: number): Promise<ApiResult<unknown>> {
+    try {
+      const { data, error } = await supabase.rpc('buy_from_sell_order', {
+        p_sell_order_id,
+        p_amount,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data };
     } catch (e) {
       return { success: false, error: String(e) };
     }

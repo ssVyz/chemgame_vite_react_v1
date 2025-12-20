@@ -32,6 +32,9 @@ export function Layout() {
           <NavLink to="/npc-buyers" className={({ isActive }) => isActive ? 'active' : ''}>
             💰 NPC Buyers
           </NavLink>
+          <NavLink to="/market" className={({ isActive }) => isActive ? 'active' : ''}>
+            🏪 Market
+          </NavLink>
           <NavLink to="/debug" className={({ isActive }) => isActive ? 'active' : ''}>
             🔧 Debug
           </NavLink>

@@ -9,6 +9,7 @@ import { BuildingsPage } from './pages/BuildingsPage';
 import { ProcessesPage } from './pages/ProcessesPage';
 import { ProcessEncyclopediaPage } from './pages/ProcessEncyclopediaPage';
 import { NpcBuyersPage } from './pages/NpcBuyersPage';
+import { MarketPage } from './pages/MarketPage';
 import { DebugPage } from './pages/DebugPage';
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
                 <Route path="/processes" element={<ProcessesPage />} />
                 <Route path="/process-encyclopedia" element={<ProcessEncyclopediaPage />} />
                 <Route path="/npc-buyers" element={<NpcBuyersPage />} />
+                <Route path="/market" element={<MarketPage />} />
                 <Route path="/debug" element={<DebugPage />} />
               </Route>
             </Route>

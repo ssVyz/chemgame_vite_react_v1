@@ -139,6 +139,16 @@ export interface ApiResult<T> {
   error?: string;
 }
 
+// Market types
+export interface MarketSellOrder {
+  sell_order_id: number;
+  created_at: string;
+  creator_factory: string;
+  res_id: number;
+  res_amount: number;
+  res_price: number;
+}
+
 // Auth types
 export interface AuthUser {
   id: string;
