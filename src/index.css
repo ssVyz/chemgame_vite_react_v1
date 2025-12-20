@@ -222,6 +222,7 @@ button:disabled {
 .dashboard-page h2,
 .buildings-page h2,
 .processes-page h2,
+.process-encyclopedia-page h2,
 .npc-buyers-page h2,
 .debug-page h2 {
   margin-bottom: 20px;
@@ -558,6 +559,230 @@ section h4 {
   border: 1px solid #ddd;
   border-radius: 4px;
   resize: vertical;
+}
+
+/* Process Encyclopedia page */
+.encyclopedia-filters {
+  margin-bottom: 20px;
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.filter-group label {
+  display: block;
+  font-weight: 500;
+  color: #555;
+  margin-bottom: 5px;
+}
+
+.filter-group input,
+.filter-group select {
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.filter-group input:focus,
+.filter-group select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+.filter-results-count {
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+}
+
+.processes-list {
+  margin-top: 20px;
+}
+
+.process-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 20px;
+  margin-top: 15px;
+}
+
+@media (max-width: 900px) {
+  .process-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+.process-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s, transform 0.1s;
+}
+
+.process-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.process-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.process-card-header h4 {
+  margin: 0;
+  color: #333;
+  font-size: 18px;
+  flex: 1;
+}
+
+.process-id {
+  font-size: 12px;
+  color: #999;
+  font-family: 'SF Mono', Monaco, 'Consolas', monospace;
+}
+
+.process-badges {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+}
+
+.category-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.process-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-label {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+}
+
+.detail-value {
+  font-size: 14px;
+  color: #333;
+  font-weight: 600;
+}
+
+.process-io-section {
+  margin-bottom: 15px;
+}
+
+.process-io-section h5 {
+  margin: 0 0 10px 0;
+  color: #555;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.io-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.io-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.material-name {
+  flex: 1;
+  font-weight: 500;
+  color: #333;
+}
+
+.material-amount {
+  font-family: 'SF Mono', Monaco, 'Consolas', monospace;
+  font-weight: 600;
+  color: #667eea;
+}
+
+.phase-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.io-empty {
+  padding: 8px 12px;
+  color: #999;
+  font-style: italic;
+  font-size: 13px;
+}
+
+.process-buildings-section {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+}
+
+.process-buildings-section h5 {
+  margin: 0 0 10px 0;
+  color: #555;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.buildings-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.building-badge {
+  padding: 6px 12px;
+  background-color: #e3e9f7;
+  color: #333;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+  font-style: italic;
+  background-color: #f8f9fa;
+  border-radius: 4px;
 }
 
 /* Dispose section */

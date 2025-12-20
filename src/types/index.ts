@@ -61,6 +61,7 @@ export interface MaterialCatalogue {
   res_code: string;
   res_name: string;
   res_phase: string;
+  res_description_text: string | null;
   res_dispose_cost: number | null;
   res_dispose_pollut: number | null;
 }

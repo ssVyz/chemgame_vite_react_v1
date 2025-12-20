@@ -7,6 +7,7 @@ import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { BuildingsPage } from './pages/BuildingsPage';
 import { ProcessesPage } from './pages/ProcessesPage';
+import { ProcessEncyclopediaPage } from './pages/ProcessEncyclopediaPage';
 import { NpcBuyersPage } from './pages/NpcBuyersPage';
 import { DebugPage } from './pages/DebugPage';
 
@@ -25,6 +26,7 @@ function App() {
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/buildings" element={<BuildingsPage />} />
                 <Route path="/processes" element={<ProcessesPage />} />
+                <Route path="/process-encyclopedia" element={<ProcessEncyclopediaPage />} />
                 <Route path="/npc-buyers" element={<NpcBuyersPage />} />
                 <Route path="/debug" element={<DebugPage />} />
               </Route>
