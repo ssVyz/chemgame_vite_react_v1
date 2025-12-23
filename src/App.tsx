@@ -4,6 +4,7 @@ import { GameProvider } from './context/GameContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Layout } from './components/Layout';
 import { LoginPage } from './pages/LoginPage';
+import { NewPlayerReg } from './pages/NewPlayerReg';
 import { DashboardPage } from './pages/DashboardPage';
 import { BuildingsPage } from './pages/BuildingsPage';
 import { ProcessesPage } from './pages/ProcessesPage';
@@ -18,8 +19,9 @@ function App() {
       <AuthProvider>
         <GameProvider>
           <Routes>
-            {/* Public route */}
+            {/* Public routes */}
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<NewPlayerReg />} />
 
             {/* Protected routes */}
             <Route element={<ProtectedRoute />}>

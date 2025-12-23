@@ -1,6 +1,6 @@
 import { useState, FormEvent } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
@@ -63,6 +63,11 @@ export function LoginPage() {
           </button>
           {error && <p className="error-message">{error}</p>}
         </form>
+        <div style={{ marginTop: '20px', textAlign: 'center' }}>
+          <Link to="/register" style={{ color: '#667eea', textDecoration: 'none' }}>
+            New Player Registration
+          </Link>
+        </div>
       </div>
     </div>
   );
