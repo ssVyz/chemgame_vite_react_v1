@@ -53,6 +53,30 @@ class GameClient {
     }
   }
 
+  async signUp(email: string, password: string): Promise<ApiResult<User>> {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) {
+        if (error instanceof AuthApiError) {
+          return { success: false, error: error.message };
+        }
+        return { success: false, error: error.message };
+      }
+
+      if (!data.user) {
+        return { success: false, error: 'No user returned from signup' };
+      }
+
+      return { success: true, data: data.user };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
   async logout(): Promise<void> {
     await supabase.auth.signOut();
   }

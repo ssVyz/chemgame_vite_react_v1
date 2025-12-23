@@ -1,14 +1,42 @@
 import { useState, FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export function NewPlayerReg() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { signUp } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    // Placeholder - no functionality yet
-    console.log('Registration form submitted (placeholder)');
+    setError('');
+    setLoading(true);
+
+    if (!email || !password) {
+      setError('Please enter email and password');
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      setLoading(false);
+      return;
+    }
+
+    const result = await signUp(email, password);
+
+    if (result.success) {
+      // Registration successful - navigate to dashboard
+      navigate('/dashboard');
+    } else {
+      setError(result.error || 'Registration failed');
+    }
+
+    setLoading(false);
   };
 
   return (
@@ -25,6 +53,7 @@ export function NewPlayerReg() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoFocus
+              disabled={loading}
             />
           </div>
           <div className="form-group">
@@ -32,14 +61,16 @@ export function NewPlayerReg() {
             <input
               type="password"
               id="password"
-              placeholder="Enter your password"
+              placeholder="Enter your password (min 6 characters)"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
             />
           </div>
-          <button type="submit" className="btn-primary">
-            Register
+          <button type="submit" disabled={loading} className="btn-primary">
+            {loading ? 'Registering...' : 'Register'}
           </button>
+          {error && <p className="error-message">{error}</p>}
         </form>
         <div style={{ marginTop: '20px', textAlign: 'center' }}>
           <Link to="/login" style={{ color: '#667eea', textDecoration: 'none' }}>

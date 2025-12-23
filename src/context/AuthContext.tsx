@@ -8,6 +8,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signUp: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
 }
 
@@ -46,6 +47,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { success: result.success, error: result.error };
   }, []);
 
+  const signUp = useCallback(async (email: string, password: string) => {
+    const result = await gameClient.signUp(email, password);
+    if (result.success && result.data) {
+      setUser(result.data);
+    }
+    return { success: result.success, error: result.error };
+  }, []);
+
   const logout = useCallback(async () => {
     await gameClient.logout();
     setUser(null);
@@ -57,6 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     session,
     loading,
     login,
+    signUp,
     logout,
   };
 
