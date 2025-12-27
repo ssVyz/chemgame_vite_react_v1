@@ -154,3 +154,39 @@ export interface AuthUser {
   id: string;
   email: string;
 }
+
+// Technology types
+export interface TechnologyCatalogue {
+  tech_id: number;
+  created_at: string;
+  tech_name: string;
+  tech_code: string;
+  tech_cost: number;
+  tech_time: number; // in minutes
+}
+
+export interface PlayerTechnologyInventory {
+  this_tech_id: number;
+  created_at: string;
+  player_auth: string;
+  tech_id: number;
+  tech_status: 'in_progress' | 'completed';
+  technology_catalogue?: TechnologyCatalogue;
+}
+
+export interface TechnologyPrerequisite {
+  tech_req_id: number;
+  tech_to_research: number;
+  tech_required: number;
+}
+
+export interface TechnologyResearchMaterial {
+  tech_mat_id: number;
+  tech_id: number;
+  res_id: number;
+  res_amount: number;
+  materials_catalogue?: {
+    res_name: string;
+    res_code: string;
+  };
+}

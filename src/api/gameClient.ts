@@ -17,6 +17,10 @@ import type {
   PlayerStorageExtension,
   PlayerExpansion,
   MarketSellOrder,
+  TechnologyCatalogue,
+  PlayerTechnologyInventory,
+  TechnologyPrerequisite,
+  TechnologyResearchMaterial,
 } from '../types';
 import { AuthApiError, Session, User } from '@supabase/supabase-js';
 
@@ -713,6 +717,88 @@ class GameClient {
       }
 
       return { success: true, data: data as PlayerExpansion };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  // ========================================================================
+  // Technology Methods
+  // ========================================================================
+
+  async get_technology_catalogue(): Promise<ApiResult<TechnologyCatalogue[]>> {
+    try {
+      const { data, error } = await supabase.from('technology_catalogue').select('*');
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: data as TechnologyCatalogue[] };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  async get_player_technology_inventory(): Promise<ApiResult<PlayerTechnologyInventory[]>> {
+    try {
+      const { data, error } = await supabase
+        .from('player_technology_inventory')
+        .select('*, technology_catalogue(*)');
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: data as PlayerTechnologyInventory[] };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  async get_technology_prerequisites(): Promise<ApiResult<TechnologyPrerequisite[]>> {
+    try {
+      const { data, error } = await supabase
+        .from('technology_tech_required')
+        .select('tech_to_research, tech_required');
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: data as TechnologyPrerequisite[] };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  async get_technology_research_materials(): Promise<ApiResult<TechnologyResearchMaterial[]>> {
+    try {
+      const { data, error } = await supabase
+        .from('technology_research_materials')
+        .select('tech_id, res_id, res_amount, materials_catalogue(res_name, res_code)');
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: data as TechnologyResearchMaterial[] };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  async start_research(p_tech_id: number): Promise<ApiResult<boolean>> {
+    try {
+      const { data, error } = await supabase.rpc('technology_start_research', {
+        p_tech_id,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: data as boolean };
     } catch (e) {
       return { success: false, error: String(e) };
     }

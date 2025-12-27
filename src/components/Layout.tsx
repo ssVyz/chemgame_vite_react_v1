@@ -26,6 +26,9 @@ export function Layout() {
           <NavLink to="/processes" className={({ isActive }) => isActive ? 'active' : ''}>
             ⚙️ Processes
           </NavLink>
+          <NavLink to="/research" className={({ isActive }) => isActive ? 'active' : ''}>
+            🔬 Research
+          </NavLink>
           <NavLink to="/process-encyclopedia" className={({ isActive }) => isActive ? 'active' : ''}>
             📚 Encyclopedia
           </NavLink>
