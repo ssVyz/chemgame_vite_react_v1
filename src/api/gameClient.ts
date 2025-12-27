@@ -775,27 +775,23 @@ class GameClient {
 
   async get_technology_research_materials(): Promise<ApiResult<TechnologyResearchMaterial[]>> {
     try {
+      // Fetch research materials without embedded join (no FK relationship exists in DB)
       const { data, error } = await supabase
         .from('technology_research_materials')
-        .select('tech_mat_id, tech_id, res_id, res_amount, materials_catalogue(res_name, res_code)');
+        .select('tech_mat_id, tech_id, res_id, res_amount');
 
       if (error) {
         return { success: false, error: error.message };
       }
 
-      // Map the query result to our expected type
-      // Supabase returns materials_catalogue as an object (not array) for foreign key relationships
+      // Note: materials_catalogue info will be looked up in the component
+      // using the materialsCatalogue Map from GameContext
       const mappedData = (data || []).map((item: any) => ({
         tech_mat_id: item.tech_mat_id,
         tech_id: item.tech_id,
         res_id: item.res_id,
         res_amount: item.res_amount,
-        materials_catalogue: item.materials_catalogue
-          ? {
-              res_name: item.materials_catalogue.res_name,
-              res_code: item.materials_catalogue.res_code,
-            }
-          : undefined,
+        materials_catalogue: undefined, // Populated in component using materialsCatalogue
       })) as TechnologyResearchMaterial[];
 
       return { success: true, data: mappedData };
