@@ -776,13 +776,28 @@ class GameClient {
     try {
       const { data, error } = await supabase
         .from('technology_research_materials')
-        .select('tech_id, res_id, res_amount, materials_catalogue(res_name, res_code)');
+        .select('tech_mat_id, tech_id, res_id, res_amount, materials_catalogue(res_name, res_code)');
 
       if (error) {
         return { success: false, error: error.message };
       }
 
-      return { success: true, data: data as TechnologyResearchMaterial[] };
+      // Map the query result to our expected type
+      // Supabase returns materials_catalogue as an object (not array) for foreign key relationships
+      const mappedData = (data || []).map((item: any) => ({
+        tech_mat_id: item.tech_mat_id,
+        tech_id: item.tech_id,
+        res_id: item.res_id,
+        res_amount: item.res_amount,
+        materials_catalogue: item.materials_catalogue
+          ? {
+              res_name: item.materials_catalogue.res_name,
+              res_code: item.materials_catalogue.res_code,
+            }
+          : undefined,
+      })) as TechnologyResearchMaterial[];
+
+      return { success: true, data: mappedData };
     } catch (e) {
       return { success: false, error: String(e) };
     }

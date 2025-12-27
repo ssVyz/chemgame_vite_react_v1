@@ -63,17 +63,6 @@ export function ResearchPage() {
     loadData();
   }, [loadData, lastRefresh]);
 
-  // Update remaining time every minute for in-progress research
-  useEffect(() => {
-    if (inProgressResearch.length === 0) return;
-
-    const interval = setInterval(() => {
-      setCurrentTime(Date.now());
-    }, 60000); // Update every minute
-
-    return () => clearInterval(interval);
-  }, [inProgressResearch.length]);
-
   // Create lookup maps
   const playerTechMap = useMemo(() => {
     const map = new Map<number, PlayerTechnologyInventory>();
@@ -84,12 +73,6 @@ export function ResearchPage() {
   const completedTechIds = useMemo(() => {
     return new Set(
       playerTech.filter((pt) => pt.tech_status === 'completed').map((pt) => pt.tech_id)
-    );
-  }, [playerTech]);
-
-  const inProgressTechIds = useMemo(() => {
-    return new Set(
-      playerTech.filter((pt) => pt.tech_status === 'in_progress').map((pt) => pt.tech_id)
     );
   }, [playerTech]);
 
@@ -198,6 +181,17 @@ export function ResearchPage() {
   const inProgressResearch = useMemo(() => {
     return technologiesWithDetails.filter((tech) => tech.status === 'in_progress');
   }, [technologiesWithDetails]);
+
+  // Update remaining time every minute for in-progress research
+  useEffect(() => {
+    if (inProgressResearch.length === 0) return;
+
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, [inProgressResearch.length]);
 
   const handleStartResearch = async (techId: number) => {
     const tech = technologies.find((t) => t.tech_id === techId);
