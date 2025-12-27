@@ -726,15 +726,20 @@ class GameClient {
   // Technology Methods
   // ========================================================================
 
-  async get_technology_catalogue(): Promise<ApiResult<TechnologyCatalogue[]>> {
+
+  async get_player_technology_inventory(): Promise<ApiResult<PlayerTechnologyInventory[]>> {
     try {
-      const { data, error } = await supabase.from('technology_catalogue').select('*');
+      // Don't use embedded selects since there's no foreign key relationship
+      // between player_technology_inventory and technology_catalogue
+      const { data, error } = await supabase
+        .from('player_technology_inventory')
+        .select('*');
 
       if (error) {
         return { success: false, error: error.message };
       }
 
-      return { success: true, data: data as TechnologyCatalogue[] };
+      return { success: true, data: data as PlayerTechnologyInventory[] };
     } catch (e) {
       return { success: false, error: String(e) };
     }

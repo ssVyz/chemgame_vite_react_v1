@@ -70,6 +70,12 @@ export function ResearchPage() {
     return map;
   }, [playerTech]);
 
+  const techCatalogueMap = useMemo(() => {
+    const map = new Map<number, TechnologyCatalogue>();
+    technologies.forEach((tech) => map.set(tech.tech_id, tech));
+    return map;
+  }, [technologies]);
+
   const completedTechIds = useMemo(() => {
     return new Set(
       playerTech.filter((pt) => pt.tech_status === 'completed').map((pt) => pt.tech_id)
@@ -99,14 +105,16 @@ export function ResearchPage() {
   }, [researchMaterials]);
 
   // Calculate remaining time for in-progress research
+  // Now uses techCatalogueMap lookup instead of embedded data
   const calculateRemainingTime = useCallback((playerTechItem: PlayerTechnologyInventory): number => {
-    if (!playerTechItem.technology_catalogue) return 0;
+    const techCatalogue = techCatalogueMap.get(playerTechItem.tech_id);
+    if (!techCatalogue) return 0;
     const startTime = new Date(playerTechItem.created_at).getTime();
     const now = currentTime;
     const elapsedMinutes = Math.floor((now - startTime) / (1000 * 60));
-    const remaining = playerTechItem.technology_catalogue.tech_time - elapsedMinutes;
+    const remaining = techCatalogue.tech_time - elapsedMinutes;
     return Math.max(0, remaining);
-  }, [currentTime]);
+  }, [currentTime, techCatalogueMap]);
 
   // Determine technology status and build details
   const technologiesWithDetails = useMemo((): TechnologyWithDetails[] => {
@@ -404,4 +412,3 @@ export function ResearchPage() {
     </div>
   );
 }
-

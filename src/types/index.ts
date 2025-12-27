@@ -171,7 +171,7 @@ export interface PlayerTechnologyInventory {
   player_auth: string;
   tech_id: number;
   tech_status: 'in_progress' | 'completed';
-  technology_catalogue?: TechnologyCatalogue;
+  // REMOVED: technology_catalogue?: TechnologyCatalogue;
 }
 
 export interface TechnologyPrerequisite {
