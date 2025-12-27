@@ -727,6 +727,23 @@ class GameClient {
   // ========================================================================
 
 
+
+  async get_technology_catalogue(): Promise<ApiResult<import('../types').TechnologyCatalogue[]>> {
+    try {
+      const { data, error } = await supabase.from('technology_catalogue').select('*');
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: data as import('../types').TechnologyCatalogue[] };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+
+
   async get_player_technology_inventory(): Promise<ApiResult<PlayerTechnologyInventory[]>> {
     try {
       // Don't use embedded selects since there's no foreign key relationship
@@ -734,22 +751,6 @@ class GameClient {
       const { data, error } = await supabase
         .from('player_technology_inventory')
         .select('*');
-
-      if (error) {
-        return { success: false, error: error.message };
-      }
-
-      return { success: true, data: data as PlayerTechnologyInventory[] };
-    } catch (e) {
-      return { success: false, error: String(e) };
-    }
-  }
-
-  async get_player_technology_inventory(): Promise<ApiResult<PlayerTechnologyInventory[]>> {
-    try {
-      const { data, error } = await supabase
-        .from('player_technology_inventory')
-        .select('*, technology_catalogue(*)');
 
       if (error) {
         return { success: false, error: error.message };
