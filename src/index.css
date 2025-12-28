@@ -967,6 +967,155 @@ section h4 {
   justify-content: flex-end;
 }
 
+/* Research page styles */
+.research-page h2 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.research-headline {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 20px 0 15px 0;
+  padding-bottom: 10px;
+  border-bottom: 2px solid;
+}
+
+.research-headline.completed-headline {
+  color: #28a745;
+  border-bottom-color: #28a745;
+}
+
+.research-headline.in-progress-headline {
+  color: #ff8c00;
+  border-bottom-color: #ff8c00;
+}
+
+.tech-name {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.tech-card-header h4.tech-name,
+.tech-card-header h5.tech-name {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+}
+
+.start-research-btn {
+  width: auto;
+  min-width: 180px;
+  margin-top: 10px;
+  align-self: flex-start;
+}
+
+.tech-grid,
+.tech-catalogue-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  margin-top: 15px;
+}
+
+.tech-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s, transform 0.1s;
+}
+
+.tech-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.tech-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  gap: 10px;
+}
+
+.tech-details {
+  margin-top: 12px;
+  font-size: 13px;
+}
+
+.tech-details p {
+  margin: 6px 0;
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.status-badge.completed {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-badge.in-progress {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.status-badge.available {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+.status-badge.locked {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.tech-prerequisites,
+.tech-materials {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+}
+
+.tech-prerequisites h5,
+.tech-materials h5 {
+  margin: 0 0 10px 0;
+  color: #555;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.tech-prerequisites ul,
+.tech-materials ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.tech-prerequisites li.completed {
+  color: #28a745;
+}
+
+.tech-prerequisites li.missing {
+  color: #dc3545;
+}
+
+.player-research-status {
+  margin-bottom: 30px;
+}
+
+.research-section {
+  margin-bottom: 30px;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .app-header {
@@ -986,5 +1135,10 @@ section h4 {
   .stat-row {
     flex-direction: column;
     gap: 10px;
+  }
+
+  .tech-grid,
+  .tech-catalogue-grid {
+    grid-template-columns: 1fr;
   }
 }

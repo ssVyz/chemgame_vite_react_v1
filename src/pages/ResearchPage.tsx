@@ -267,16 +267,15 @@ export function ResearchPage() {
         {/* Completed Research */}
         {completedResearch.length > 0 && (
           <div className="research-section">
-            <h4>✓ Completed Research ({completedResearch.length})</h4>
+            <h4 className="research-headline completed-headline">✓ Completed Research ({completedResearch.length})</h4>
             <div className="tech-grid">
               {completedResearch.map((tech) => (
                 <div key={tech.tech_id} className="tech-card completed">
                   <div className="tech-card-header">
-                    <h5>{tech.tech_name}</h5>
+                    <h5 className="tech-name">{tech.tech_name}</h5>
                     {getStatusBadge(tech.status)}
                   </div>
                   <div className="tech-details">
-                    <p><strong>Code:</strong> {tech.tech_code}</p>
                     <p><strong>ID:</strong> {tech.tech_id}</p>
                   </div>
                 </div>
@@ -288,16 +287,15 @@ export function ResearchPage() {
         {/* In Progress Research */}
         {inProgressResearch.length > 0 && (
           <div className="research-section">
-            <h4>⏳ Research In Progress ({inProgressResearch.length})</h4>
+            <h4 className="research-headline in-progress-headline">⏳ Research In Progress ({inProgressResearch.length})</h4>
             <div className="tech-grid">
               {inProgressResearch.map((tech) => (
                 <div key={tech.tech_id} className="tech-card in-progress">
                   <div className="tech-card-header">
-                    <h5>{tech.tech_name}</h5>
+                    <h5 className="tech-name">{tech.tech_name}</h5>
                     {getStatusBadge(tech.status)}
                   </div>
                   <div className="tech-details">
-                    <p><strong>Code:</strong> {tech.tech_code}</p>
                     <p><strong>ID:</strong> {tech.tech_id}</p>
                     {tech.remainingTime !== undefined && (
                       <p><strong>Time Remaining:</strong> {formatTime(tech.remainingTime)}</p>
@@ -340,12 +338,11 @@ export function ResearchPage() {
             {filteredTechnologies.map((tech) => (
               <div key={tech.tech_id} className={`tech-card ${tech.status}`}>
                 <div className="tech-card-header">
-                  <h4>{tech.tech_name}</h4>
+                  <h4 className="tech-name">{tech.tech_name}</h4>
                   {getStatusBadge(tech.status)}
                 </div>
 
                 <div className="tech-details">
-                  <p><strong>Code:</strong> {tech.tech_code}</p>
                   <p><strong>ID:</strong> {tech.tech_id}</p>
                   <p><strong>Cost:</strong> {formatNumber(tech.tech_cost)} cash</p>
                   <p><strong>Research Time:</strong> {formatTime(tech.tech_time)}</p>
@@ -386,8 +383,7 @@ export function ResearchPage() {
                 {tech.status === 'available' && (
                   <button
                     onClick={() => handleStartResearch(tech.tech_id)}
-                    className="btn-primary"
-                    style={{ width: '100%', marginTop: '10px' }}
+                    className="btn-primary start-research-btn"
                   >
                     🔬 Start Research
                   </button>
