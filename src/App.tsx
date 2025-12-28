@@ -5,6 +5,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { Layout } from './components/Layout';
 import { LoginPage } from './pages/LoginPage';
 import { NewPlayerReg } from './pages/NewPlayerReg';
+import { OnboardingPage } from './pages/OnboardingPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { BuildingsPage } from './pages/BuildingsPage';
 import { ProcessesPage } from './pages/ProcessesPage';
@@ -26,6 +27,10 @@ function App() {
 
             {/* Protected routes */}
             <Route element={<ProtectedRoute />}>
+              {/* Onboarding page - accessible without player entry */}
+              <Route path="/onboarding" element={<OnboardingPage />} />
+              
+              {/* Other protected routes require player entry */}
               <Route element={<Layout />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/buildings" element={<BuildingsPage />} />

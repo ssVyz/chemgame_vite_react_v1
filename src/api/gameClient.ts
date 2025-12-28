@@ -817,6 +817,27 @@ class GameClient {
   }
 
   // ========================================================================
+  // Player Initialization Methods
+  // ========================================================================
+
+  async initialize_new_player(p_player_name: string, p_player_factory: string): Promise<ApiResult<boolean>> {
+    try {
+      const { data, error } = await supabase.rpc('initialize_new_player', {
+        p_player_name,
+        p_player_factory,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: data as boolean };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  // ========================================================================
   // Utility Methods
   // ========================================================================
 
