@@ -520,7 +520,7 @@ export function ProcessesPage() {
             </p>
             {selectedBuilding && installedProc && (() => {
               const processStatus = formatProcessStatus(selectedBuilding.b_proc_status);
-              const hasProcess = selectedBuilding.b_proc_installed && selectedBuilding.b_proc_installed !== 0;
+              const hasProcess = selectedBuilding.b_proc_installed !== null && selectedBuilding.b_proc_installed !== 0;
               const autorunStatus = formatAutorunStatus(selectedBuilding.b_proc_autorun, hasProcess);
               
               return (
