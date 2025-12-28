@@ -3,6 +3,49 @@ import { gameClient } from '../api/gameClient';
 import { useGame } from '../context/GameContext';
 import type { PlayerBuilding, BuildingCatalogue, StorageExtensionCatalogue, PlayerStorageExtension, Player, PlayerTechnologyInventory } from '../types';
 
+// Helper function to format building status
+const formatBuildingStatus = (status: string) => {
+  const statusMap: Record<string, { label: string; color: string; bgColor: string }> = {
+    'under_construction': { label: '🏗️ Under Construction', color: '#856404', bgColor: '#fff3cd' },
+    'unconfigured': { label: '⚙️ Unconfigured', color: '#0c5460', bgColor: '#d1ecf1' },
+    'configured_idle': { label: '✅ Ready (Idle)', color: '#155724', bgColor: '#d4edda' },
+    'configured_working': { label: '⚡ Working', color: '#004085', bgColor: '#cce5ff' },
+    'cleaning_up': { label: '🧹 Cleaning Up', color: '#856404', bgColor: '#fff3cd' },
+    'being_demolished': { label: '🔨 Being Demolished', color: '#721c24', bgColor: '#f8d7da' },
+  };
+  
+  const statusInfo = statusMap[status] || { label: status, color: '#666', bgColor: '#f0f0f0' };
+  return statusInfo;
+};
+
+// Helper function to format process status
+const formatProcessStatus = (status: string | null) => {
+  if (!status) return null;
+  
+  const statusMap: Record<string, { label: string; color: string; bgColor: string }> = {
+    'being_installed': { label: '🔧 Installing', color: '#856404', bgColor: '#fff3cd' },
+    'idle': { label: '⏸️ Idle', color: '#0c5460', bgColor: '#d1ecf1' },
+    'running': { label: '▶️ Running', color: '#155724', bgColor: '#d4edda' },
+    'clearing_out': { label: '🧹 Clearing Out', color: '#856404', bgColor: '#fff3cd' },
+  };
+  
+  const statusInfo = statusMap[status] || { label: status, color: '#666', bgColor: '#f0f0f0' };
+  return statusInfo;
+};
+
+// Helper function to format autorun status
+const formatAutorunStatus = (autorun: boolean | null, hasProcess: boolean) => {
+  if (!hasProcess) {
+    return { label: '-', color: '#999', bgColor: 'transparent' };
+  }
+  
+  if (autorun) {
+    return { label: '🔄 ON', color: '#155724', bgColor: '#d4edda' };
+  } else {
+    return { label: '⏹️ OFF', color: '#721c24', bgColor: '#f8d7da' };
+  }
+};
+
 export function BuildingsPage() {
   const { buildingsCatalogue, processCatalogue, lastRefresh } = useGame();
   const [buildings, setBuildings] = useState<PlayerBuilding[]>([]);
@@ -283,7 +326,11 @@ export function BuildingsPage() {
                   const buildingInfo = buildingsCatalogue.get(bld.building_id);
                   const procId = bld.b_proc_installed;
                   const procInfo = procId ? processCatalogue.get(procId) : null;
-                  const autorunStatus = !procId || procId === 0 ? '-' : (bld.b_proc_autorun ? 'ON' : 'OFF');
+                  const hasProcess = procId && procId !== 0;
+                  
+                  const buildingStatus = formatBuildingStatus(bld.b_current_status);
+                  const processStatus = formatProcessStatus(bld.b_proc_status);
+                  const autorunStatus = formatAutorunStatus(bld.b_proc_autorun, hasProcess);
 
                   return (
                     <tr
@@ -293,10 +340,44 @@ export function BuildingsPage() {
                     >
                       <td>{bld.this_building_id}</td>
                       <td>{buildingInfo?.building_name || bld.building_code}</td>
-                      <td>{bld.b_current_status}</td>
+                      <td>
+                        <span 
+                          className="status-badge"
+                          style={{ 
+                            color: buildingStatus.color, 
+                            backgroundColor: buildingStatus.bgColor
+                          }}
+                        >
+                          {buildingStatus.label}
+                        </span>
+                      </td>
                       <td>{procInfo?.proc_name || (procId ? `Process ${procId}` : '-')}</td>
-                      <td>{bld.b_proc_status || '-'}</td>
-                      <td>{autorunStatus}</td>
+                      <td>
+                        {processStatus ? (
+                          <span 
+                            className="status-badge"
+                            style={{ 
+                              color: processStatus.color, 
+                              backgroundColor: processStatus.bgColor
+                            }}
+                          >
+                            {processStatus.label}
+                          </span>
+                        ) : (
+                          '-'
+                        )}
+                      </td>
+                      <td>
+                        <span 
+                          className="status-badge"
+                          style={{ 
+                            color: autorunStatus.color, 
+                            backgroundColor: autorunStatus.bgColor
+                          }}
+                        >
+                          {autorunStatus.label}
+                        </span>
+                      </td>
                     </tr>
                   );
                 })
@@ -403,6 +484,10 @@ export function BuildingsPage() {
                     const extensionInfo = storageExtensionsCatalogue.find(cat => cat.s_extension_id === ext.s_extension_id);
                     const remainingTime = getRemainingBuildTime(ext, extensionInfo);
                     const isCompleted = ext.s_ext_current_status === 'completed' || ext.s_ext_finished_building;
+                    
+                    const extensionStatus = isCompleted 
+                      ? { label: '✅ Completed', color: '#155724', bgColor: '#d4edda' }
+                      : { label: '🏗️ Under Construction', color: '#856404', bgColor: '#fff3cd' };
 
                     return (
                       <tr
@@ -412,7 +497,17 @@ export function BuildingsPage() {
                       >
                         <td>{ext.this_s_extension_id}</td>
                         <td>{extensionInfo?.s_extension_name || `Extension ${ext.s_extension_id}`}</td>
-                        <td>{isCompleted ? 'Completed' : 'Under Construction'}</td>
+                        <td>
+                          <span 
+                            className="status-badge"
+                            style={{ 
+                              color: extensionStatus.color, 
+                              backgroundColor: extensionStatus.bgColor
+                            }}
+                          >
+                            {extensionStatus.label}
+                          </span>
+                        </td>
                         <td>
                           {isCompleted ? '-' : remainingTime !== null ? `${remainingTime} min` : 'Ready'}
                         </td>

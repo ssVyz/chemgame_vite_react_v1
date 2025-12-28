@@ -3,6 +3,49 @@ import { gameClient } from '../api/gameClient';
 import { useGame } from '../context/GameContext';
 import type { PlayerBuilding, ProcessCatalogue, ProcessInput, ProcessOutput, AllowedProcess, PlayerTechnologyInventory } from '../types';
 
+// Helper function to format building status
+const formatBuildingStatus = (status: string) => {
+  const statusMap: Record<string, { label: string; color: string; bgColor: string }> = {
+    'under_construction': { label: '🏗️ Under Construction', color: '#856404', bgColor: '#fff3cd' },
+    'unconfigured': { label: '⚙️ Unconfigured', color: '#0c5460', bgColor: '#d1ecf1' },
+    'configured_idle': { label: '✅ Ready (Idle)', color: '#155724', bgColor: '#d4edda' },
+    'configured_working': { label: '⚡ Working', color: '#004085', bgColor: '#cce5ff' },
+    'cleaning_up': { label: '🧹 Cleaning Up', color: '#856404', bgColor: '#fff3cd' },
+    'being_demolished': { label: '🔨 Being Demolished', color: '#721c24', bgColor: '#f8d7da' },
+  };
+  
+  const statusInfo = statusMap[status] || { label: status, color: '#666', bgColor: '#f0f0f0' };
+  return statusInfo;
+};
+
+// Helper function to format process status
+const formatProcessStatus = (status: string | null) => {
+  if (!status) return null;
+  
+  const statusMap: Record<string, { label: string; color: string; bgColor: string }> = {
+    'being_installed': { label: '🔧 Installing', color: '#856404', bgColor: '#fff3cd' },
+    'idle': { label: '⏸️ Idle', color: '#0c5460', bgColor: '#d1ecf1' },
+    'running': { label: '▶️ Running', color: '#155724', bgColor: '#d4edda' },
+    'clearing_out': { label: '🧹 Clearing Out', color: '#856404', bgColor: '#fff3cd' },
+  };
+  
+  const statusInfo = statusMap[status] || { label: status, color: '#666', bgColor: '#f0f0f0' };
+  return statusInfo;
+};
+
+// Helper function to format autorun status
+const formatAutorunStatus = (autorun: boolean | null, hasProcess: boolean) => {
+  if (!hasProcess) {
+    return { label: '-', color: '#999', bgColor: 'transparent' };
+  }
+  
+  if (autorun) {
+    return { label: '🔄 ON', color: '#155724', bgColor: '#d4edda' };
+  } else {
+    return { label: '⏹️ OFF', color: '#721c24', bgColor: '#f8d7da' };
+  }
+};
+
 export function ProcessesPage() {
   const { buildingsCatalogue, processCatalogue, materialsCatalogue, lastRefresh } = useGame();
   const [buildings, setBuildings] = useState<PlayerBuilding[]>([]);
@@ -403,7 +446,11 @@ export function ProcessesPage() {
                 const buildingInfo = buildingsCatalogue.get(bld.building_id);
                 const procId = bld.b_proc_installed;
                 const procInfo = procId ? processCatalogue.get(procId) : null;
-                const autorunStatus = !procId || procId === 0 ? '-' : (bld.b_proc_autorun ? 'ON' : 'OFF');
+                const hasProcess = procId && procId !== 0;
+                
+                const buildingStatus = formatBuildingStatus(bld.b_current_status);
+                const processStatus = formatProcessStatus(bld.b_proc_status);
+                const autorunStatus = formatAutorunStatus(bld.b_proc_autorun, hasProcess);
 
                 return (
                   <tr
@@ -413,10 +460,44 @@ export function ProcessesPage() {
                   >
                     <td>{bld.this_building_id}</td>
                     <td>{buildingInfo?.building_name || bld.building_code}</td>
-                    <td>{bld.b_current_status}</td>
+                    <td>
+                      <span 
+                        className="status-badge"
+                        style={{ 
+                          color: buildingStatus.color, 
+                          backgroundColor: buildingStatus.bgColor
+                        }}
+                      >
+                        {buildingStatus.label}
+                      </span>
+                    </td>
                     <td>{procInfo?.proc_name || (procId ? `Process ${procId}` : 'No Process')}</td>
-                    <td>{bld.b_proc_status || '-'}</td>
-                    <td>{autorunStatus}</td>
+                    <td>
+                      {processStatus ? (
+                        <span 
+                          className="status-badge"
+                          style={{ 
+                            color: processStatus.color, 
+                            backgroundColor: processStatus.bgColor
+                          }}
+                        >
+                          {processStatus.label}
+                        </span>
+                      ) : (
+                        '-'
+                      )}
+                    </td>
+                    <td>
+                      <span 
+                        className="status-badge"
+                        style={{ 
+                          color: autorunStatus.color, 
+                          backgroundColor: autorunStatus.bgColor
+                        }}
+                      >
+                        {autorunStatus.label}
+                      </span>
+                    </td>
                   </tr>
                 );
               })
@@ -437,13 +518,45 @@ export function ProcessesPage() {
                 ? `Building #${selectedBuilding.this_building_id}: ${buildingsCatalogue.get(selectedBuilding.building_id)?.building_name || selectedBuilding.building_code}`
                 : '(Select a building above)'}
             </p>
-            {selectedBuilding && installedProc && (
-              <>
-                <p>Process: {installedProc.proc_name}</p>
-                <p>Status: {selectedBuilding.b_proc_status || '-'}</p>
-                <p>Autorun: {selectedBuilding.b_proc_autorun ? 'ON' : 'OFF'}</p>
-              </>
-            )}
+            {selectedBuilding && installedProc && (() => {
+              const processStatus = formatProcessStatus(selectedBuilding.b_proc_status);
+              const hasProcess = selectedBuilding.b_proc_installed && selectedBuilding.b_proc_installed !== 0;
+              const autorunStatus = formatAutorunStatus(selectedBuilding.b_proc_autorun, hasProcess);
+              
+              return (
+                <>
+                  <p>Process: {installedProc.proc_name}</p>
+                  <p>
+                    Status:{' '}
+                    {processStatus ? (
+                      <span 
+                        className="status-badge"
+                        style={{ 
+                          color: processStatus.color, 
+                          backgroundColor: processStatus.bgColor
+                        }}
+                      >
+                        {processStatus.label}
+                      </span>
+                    ) : (
+                      '-'
+                    )}
+                  </p>
+                  <p>
+                    Autorun:{' '}
+                    <span 
+                      className="status-badge"
+                      style={{ 
+                        color: autorunStatus.color, 
+                        backgroundColor: autorunStatus.bgColor
+                      }}
+                    >
+                      {autorunStatus.label}
+                    </span>
+                  </p>
+                </>
+              );
+            })()}
           </div>
 
           <div className="run-controls">
