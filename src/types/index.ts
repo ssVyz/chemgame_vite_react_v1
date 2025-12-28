@@ -42,6 +42,7 @@ export interface BuildingCatalogue {
   building_cost: number;
   building_space_req: number;
   building_build_time: number;
+  building_tech_req: number | null;
 }
 
 export interface ProcessCatalogue {
@@ -54,6 +55,7 @@ export interface ProcessCatalogue {
   proc_run_cost: number;
   proc_run_time: number;
   proc_run_pollut: number;
+  proc_tech_req: number | null;
 }
 
 export interface MaterialCatalogue {

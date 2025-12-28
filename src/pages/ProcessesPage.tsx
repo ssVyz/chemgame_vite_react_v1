@@ -1,7 +1,7 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { gameClient } from '../api/gameClient';
 import { useGame } from '../context/GameContext';
-import type { PlayerBuilding, ProcessCatalogue, ProcessInput, ProcessOutput, AllowedProcess } from '../types';
+import type { PlayerBuilding, ProcessCatalogue, ProcessInput, ProcessOutput, AllowedProcess, PlayerTechnologyInventory } from '../types';
 
 export function ProcessesPage() {
   const { buildingsCatalogue, processCatalogue, materialsCatalogue, lastRefresh } = useGame();
@@ -21,6 +21,8 @@ export function ProcessesPage() {
 
   // Run controls
   const [runCount, setRunCount] = useState('1');
+  const [playerTech, setPlayerTech] = useState<PlayerTechnologyInventory[]>([]);
+  const [showUnavailableProcesses, setShowUnavailableProcesses] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -38,6 +40,12 @@ export function ProcessesPage() {
       setBuildings(sorted);
     } else {
       setError(result.error || 'Failed to load buildings');
+    }
+
+    // Load player technology inventory
+    const techResult = await gameClient.get_player_technology_inventory();
+    if (techResult.success && techResult.data) {
+      setPlayerTech(techResult.data);
     }
 
     setLoading(false);
@@ -60,42 +68,67 @@ export function ProcessesPage() {
     });
   }, []);
 
-  // Auto-select the first process when processes are available and no process is installed/selected
+  // Filter processes based on tech requirements
+  const completedTechIds = useMemo(() => {
+    return new Set(
+      playerTech.filter((pt) => pt.tech_status === 'completed').map((pt) => pt.tech_id)
+    );
+  }, [playerTech]);
+
+  const isProcessAvailable = useCallback((process: ProcessCatalogue): boolean => {
+    // If no tech requirement, process is available
+    if (process.proc_tech_req === null || process.proc_tech_req === undefined) {
+      return true;
+    }
+    // Check if player has completed the required tech
+    return completedTechIds.has(process.proc_tech_req);
+  }, [completedTechIds]);
+
+  // Get filtered available processes based on tech requirements and checkbox state
+  const availableProcesses = useMemo(() => {
+    if (showUnavailableProcesses) {
+      return allowedProcesses;
+    }
+    return allowedProcesses.filter(isProcessAvailable);
+  }, [allowedProcesses, showUnavailableProcesses, isProcessAvailable]);
+
+  // Auto-select the first available process when processes are available and no process is installed/selected
   // This ensures the Install button is enabled even when there's only one process option
   // This acts as a safety net in case handleBuildingSelect doesn't properly set the process
   useEffect(() => {
-    // Only run if we have a building, no installed process, and allowed processes available
+    // Only run if we have a building, no installed process, and available processes exist
     if (
       selectedBuilding &&
       selectedBuilding.b_proc_installed === null &&
-      allowedProcesses.length > 0
+      availableProcesses.length > 0
     ) {
-      // Always select the first process if none is selected, or if the selected process is not in the allowed list
-      // This is especially important when there's only one process available
-      const firstProcess = allowedProcesses[0];
+      // Always select the first available process if none is selected, or if the selected process is not available
+      const firstAvailableProcess = availableProcesses[0];
       const shouldSelectFirst = !selectedProcess || 
-        !allowedProcesses.some(p => p.proc_id === selectedProcess.proc_id);
+        !availableProcesses.some(p => p.proc_id === selectedProcess.proc_id);
       
-      if (shouldSelectFirst) {
+      if (shouldSelectFirst && isProcessAvailable(firstAvailableProcess)) {
+        setSelectedProcess(firstAvailableProcess);
+        loadProcessDetails(firstAvailableProcess.proc_id);
+      }
+    }
+  }, [selectedBuilding, availableProcesses, selectedProcess, loadProcessDetails, isProcessAvailable]);
+
+  // Additional effect to ensure single available process is always selected
+  useEffect(() => {
+    if (
+      selectedBuilding &&
+      selectedBuilding.b_proc_installed === null &&
+      availableProcesses.length === 1 &&
+      (!selectedProcess || selectedProcess.proc_id !== availableProcesses[0].proc_id)
+    ) {
+      const firstProcess = availableProcesses[0];
+      if (isProcessAvailable(firstProcess)) {
         setSelectedProcess(firstProcess);
         loadProcessDetails(firstProcess.proc_id);
       }
     }
-  }, [selectedBuilding, allowedProcesses, selectedProcess, loadProcessDetails]);
-
-  // Additional effect to ensure single process is always selected
-  useEffect(() => {
-    if (
-      selectedBuilding &&
-      selectedBuilding.b_proc_installed === null &&
-      allowedProcesses.length === 1 &&
-      (!selectedProcess || selectedProcess.proc_id !== allowedProcesses[0].proc_id)
-    ) {
-      const firstProcess = allowedProcesses[0];
-      setSelectedProcess(firstProcess);
-      loadProcessDetails(firstProcess.proc_id);
-    }
-  }, [selectedBuilding, allowedProcesses, selectedProcess, loadProcessDetails]);
+  }, [selectedBuilding, availableProcesses, selectedProcess, loadProcessDetails, isProcessAvailable]);
 
   const handleBuildingSelect = async (building: PlayerBuilding) => {
     setSelectedBuilding(building);
@@ -117,13 +150,14 @@ export function ProcessesPage() {
       // Set allowed processes first
       setAllowedProcesses(allowed);
 
-      // Auto-select the first allowed process so the Install button works immediately
+      // Auto-select the first available allowed process so the Install button works immediately
       // This works for buildings with no process installed, regardless of how many processes are available
       // The useEffect will also handle this as a safety net
       if (allowed.length > 0 && building.b_proc_installed === null) {
-        const firstProcess = allowed[0];
-        setSelectedProcess(firstProcess);
-        await loadProcessDetails(firstProcess.proc_id);
+        // Find first available process (with completed tech requirement)
+        const firstAvailableProcess = allowed.find(isProcessAvailable) || allowed[0];
+        setSelectedProcess(firstAvailableProcess);
+        await loadProcessDetails(firstAvailableProcess.proc_id);
       }
     } else {
       setAllowedProcesses([]);
@@ -497,11 +531,23 @@ export function ProcessesPage() {
         <section className="install-process-panel">
           <h3>⚙ Install New Process</h3>
 
+          <div style={{ marginBottom: '10px' }}>
+            <label>
+              <input
+                type="checkbox"
+                checked={showUnavailableProcesses}
+                onChange={(e) => setShowUnavailableProcesses(e.target.checked)}
+                disabled={!selectedBuilding}
+              />
+              {' '}Show also unavailable
+            </label>
+          </div>
+
           <div className="process-list">
             <label>Available Processes for Selected Building:</label>
             <select
               size={6}
-              value={selectedProcess?.proc_id ? String(selectedProcess.proc_id) : (allowedProcesses.length === 1 ? String(allowedProcesses[0].proc_id) : '')}
+              value={selectedProcess?.proc_id ? String(selectedProcess.proc_id) : (availableProcesses.length === 1 ? String(availableProcesses[0].proc_id) : '')}
               onChange={(e) => {
                 const id = parseInt(e.target.value);
                 if (!isNaN(id)) {
@@ -510,21 +556,24 @@ export function ProcessesPage() {
                 }
               }}
               onFocus={() => {
-                // When select gets focus and there's only one process, ensure it's selected
-                if (allowedProcesses.length === 1 && !selectedProcess) {
-                  handleProcessSelect(allowedProcesses[0]);
+                // When select gets focus and there's only one available process, ensure it's selected
+                if (availableProcesses.length === 1 && !selectedProcess) {
+                  handleProcessSelect(availableProcesses[0]);
                 }
               }}
               disabled={!selectedBuilding}
             >
-              {allowedProcesses.length === 0 ? (
+              {availableProcesses.length === 0 ? (
                 <option value="">No processes available</option>
               ) : (
-                allowedProcesses.map((proc) => (
-                  <option key={proc.proc_id} value={String(proc.proc_id)}>
-                    [{proc.proc_id}] {proc.proc_name}
-                  </option>
-                ))
+                availableProcesses.map((proc) => {
+                  const isAvailable = isProcessAvailable(proc);
+                  return (
+                    <option key={proc.proc_id} value={String(proc.proc_id)}>
+                      [{proc.proc_id}] {proc.proc_name} {!isAvailable ? '(Requires Tech)' : ''}
+                    </option>
+                  );
+                })
               )}
             </select>
           </div>
@@ -538,6 +587,14 @@ export function ProcessesPage() {
               <p><strong>Run Cost:</strong> {formatNumber(selectedProcess.proc_run_cost)} cash</p>
               <p><strong>Run Time:</strong> {selectedProcess.proc_run_time} min</p>
               <p><strong>Pollution/Run:</strong> {selectedProcess.proc_run_pollut}</p>
+              {selectedProcess.proc_tech_req !== null && selectedProcess.proc_tech_req !== undefined && (
+                <p>
+                  <strong>Tech Required:</strong> Tech ID {selectedProcess.proc_tech_req}
+                  {!isProcessAvailable(selectedProcess) && (
+                    <span style={{ color: '#d32f2f', marginLeft: '8px' }}>(Not Researched)</span>
+                  )}
+                </p>
+              )}
 
               {processDetails && (
                 <>

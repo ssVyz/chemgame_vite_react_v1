@@ -1,7 +1,7 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { gameClient } from '../api/gameClient';
 import { useGame } from '../context/GameContext';
-import type { PlayerBuilding, BuildingCatalogue, StorageExtensionCatalogue, PlayerStorageExtension, Player } from '../types';
+import type { PlayerBuilding, BuildingCatalogue, StorageExtensionCatalogue, PlayerStorageExtension, Player, PlayerTechnologyInventory } from '../types';
 
 export function BuildingsPage() {
   const { buildingsCatalogue, processCatalogue, lastRefresh } = useGame();
@@ -21,6 +21,8 @@ export function BuildingsPage() {
   const [selectedCatalogueExtension, setSelectedCatalogueExtension] = useState<StorageExtensionCatalogue | null>(null);
   const [selectedPlayerExtension, setSelectedPlayerExtension] = useState<PlayerStorageExtension | null>(null);
   const [storageExtensionsStatus, setStorageExtensionsStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [playerTech, setPlayerTech] = useState<PlayerTechnologyInventory[]>([]);
+  const [showUnavailableBuildings, setShowUnavailableBuildings] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -56,6 +58,12 @@ export function BuildingsPage() {
     const extensionsResult = await gameClient.get_player_storage_extensions();
     if (extensionsResult.success && extensionsResult.data) {
       setPlayerStorageExtensions(extensionsResult.data);
+    }
+
+    // Load player technology inventory
+    const techResult = await gameClient.get_player_technology_inventory();
+    if (techResult.success && techResult.data) {
+      setPlayerTech(techResult.data);
     }
 
     setLoading(false);
@@ -214,7 +222,29 @@ export function BuildingsPage() {
     return remaining > 0 ? Math.ceil(remaining / 1000 / 60) : 0;
   };
 
-  const catalogueArray = Array.from(buildingsCatalogue.values());
+  // Filter buildings based on tech requirements
+  const completedTechIds = useMemo(() => {
+    return new Set(
+      playerTech.filter((pt) => pt.tech_status === 'completed').map((pt) => pt.tech_id)
+    );
+  }, [playerTech]);
+
+  const isBuildingAvailable = useCallback((building: BuildingCatalogue): boolean => {
+    // If no tech requirement, building is available
+    if (building.building_tech_req === null || building.building_tech_req === undefined) {
+      return true;
+    }
+    // Check if player has completed the required tech
+    return completedTechIds.has(building.building_tech_req);
+  }, [completedTechIds]);
+
+  const catalogueArray = useMemo(() => {
+    const allBuildings = Array.from(buildingsCatalogue.values());
+    if (showUnavailableBuildings) {
+      return allBuildings;
+    }
+    return allBuildings.filter(isBuildingAvailable);
+  }, [buildingsCatalogue, showUnavailableBuildings, isBuildingAvailable]);
 
   if (loading && buildings.length === 0) {
     return <div className="loading">Loading buildings...</div>;
@@ -285,6 +315,16 @@ export function BuildingsPage() {
         {/* Right: Build New Building */}
         <section className="build-new">
           <h3>Build New Building</h3>
+          <div style={{ marginBottom: '10px' }}>
+            <label>
+              <input
+                type="checkbox"
+                checked={showUnavailableBuildings}
+                onChange={(e) => setShowUnavailableBuildings(e.target.checked)}
+              />
+              {' '}Show also unavailable
+            </label>
+          </div>
           <div className="catalogue-list">
             <label>Available Buildings:</label>
             <select
@@ -295,11 +335,14 @@ export function BuildingsPage() {
                 setSelectedCatalogueBuilding(buildingsCatalogue.get(id) || null);
               }}
             >
-              {catalogueArray.map((bld) => (
-                <option key={bld.building_id} value={bld.building_id}>
-                  [{bld.building_id}] {bld.building_name}
-                </option>
-              ))}
+              {catalogueArray.map((bld) => {
+                const isAvailable = isBuildingAvailable(bld);
+                return (
+                  <option key={bld.building_id} value={bld.building_id}>
+                    [{bld.building_id}] {bld.building_name} {!isAvailable ? '(Requires Tech)' : ''}
+                  </option>
+                );
+              })}
             </select>
           </div>
 
@@ -310,6 +353,14 @@ export function BuildingsPage() {
               <p><strong>Cost:</strong> {formatNumber(selectedCatalogueBuilding.building_cost)} cash</p>
               <p><strong>Space Required:</strong> {selectedCatalogueBuilding.building_space_req}</p>
               <p><strong>Build Time:</strong> {selectedCatalogueBuilding.building_build_time} minutes</p>
+              {selectedCatalogueBuilding.building_tech_req !== null && selectedCatalogueBuilding.building_tech_req !== undefined && (
+                <p>
+                  <strong>Tech Required:</strong> Tech ID {selectedCatalogueBuilding.building_tech_req}
+                  {!isBuildingAvailable(selectedCatalogueBuilding) && (
+                    <span style={{ color: '#d32f2f', marginLeft: '8px' }}>(Not Researched)</span>
+                  )}
+                </p>
+              )}
             </div>
           )}
 
