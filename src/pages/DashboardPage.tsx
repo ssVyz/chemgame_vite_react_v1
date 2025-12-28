@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { gameClient } from '../api/gameClient';
 import { useGame } from '../context/GameContext';
-import type { Player, PlayerMaterial, PlayerExpansion } from '../types';
+import type { Player, PlayerMaterial, PlayerExpansion, MaterialCatalogue } from '../types';
 
 export function DashboardPage() {
   const { materialsCatalogue, lastRefresh } = useGame();
@@ -164,6 +164,30 @@ export function DashboardPage() {
   const fluidMaterials = getMaterialsByPhase(['fluid']);
   const gasMaterials = getMaterialsByPhase(['gas']);
 
+  // Helper to render color indicators
+  const renderColorIndicators = (info: MaterialCatalogue | undefined) => {
+    if (!info) return null;
+    
+    const colors: string[] = [];
+    if (info.res_color1) colors.push(info.res_color1);
+    if (info.res_color2) colors.push(info.res_color2);
+    
+    if (colors.length === 0) return <span style={{ color: '#999', fontStyle: 'italic' }}>-</span>;
+    
+    return (
+      <div className="color-indicators">
+        {colors.map((color, index) => (
+          <span
+            key={index}
+            className="color-dot"
+            style={{ backgroundColor: color }}
+            title={color}
+          />
+        ))}
+      </div>
+    );
+  };
+
   // Helper to render material table rows
   const renderMaterialRows = (mats: PlayerMaterial[]) => {
     if (mats.length === 0) {
@@ -182,7 +206,7 @@ export function DashboardPage() {
           className={selectedMaterial?.res_id === mat.res_id ? 'selected' : ''}
         >
           <td>{mat.res_id}</td>
-          <td>{mat.res_code}</td>
+          <td className="color-cell">{renderColorIndicators(info)}</td>
           <td>{info?.res_name || mat.res_code}</td>
           <td>{info?.res_phase || '-'}</td>
           <td className="number">{formatNumber(mat.amount)}</td>
@@ -298,7 +322,7 @@ export function DashboardPage() {
           <thead>
             <tr>
               <th>ID</th>
-              <th>Code</th>
+              <th>Colors</th>
               <th>Name</th>
               <th>Phase</th>
               <th>Amount</th>
@@ -335,7 +359,7 @@ export function DashboardPage() {
           <thead>
             <tr>
               <th>ID</th>
-              <th>Code</th>
+              <th>Colors</th>
               <th>Name</th>
               <th>Phase</th>
               <th>Amount</th>
@@ -372,7 +396,7 @@ export function DashboardPage() {
           <thead>
             <tr>
               <th>ID</th>
-              <th>Code</th>
+              <th>Colors</th>
               <th>Name</th>
               <th>Phase</th>
               <th>Amount</th>

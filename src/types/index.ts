@@ -66,6 +66,8 @@ export interface MaterialCatalogue {
   res_description_text: string | null;
   res_dispose_cost: number | null;
   res_dispose_pollut: number | null;
+  res_color1: string | null;
+  res_color2: string | null;
 }
 
 export interface AllowedProcess {

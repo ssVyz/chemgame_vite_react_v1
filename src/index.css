@@ -810,6 +810,28 @@ section h4 {
   gap: 15px;
 }
 
+/* Color indicators for materials */
+.color-indicators {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.color-dot {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+.color-cell {
+  text-align: center;
+  vertical-align: middle;
+}
+
 /* Status messages */
 .status-message {
   padding: 12px 20px;
