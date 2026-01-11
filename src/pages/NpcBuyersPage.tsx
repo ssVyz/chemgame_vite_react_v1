@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { gameClient } from '../api/gameClient';
 import { useGame } from '../context/GameContext';
 import type { NpcBuyer, PlayerMaterial } from '../types';
@@ -14,6 +14,7 @@ export function NpcBuyersPage() {
   // Selection state
   const [selectedBuyer, setSelectedBuyer] = useState<NpcBuyer | null>(null);
   const [sellAmount, setSellAmount] = useState('1');
+  const [showOnlyOwnedMaterials, setShowOnlyOwnedMaterials] = useState(true);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -54,6 +55,19 @@ export function NpcBuyersPage() {
     const mat = materials.find((m) => m.res_id === res_id);
     return mat?.amount || 0;
   };
+
+  // Filter buyers to show only those where player owns the material
+  const filteredBuyers = useMemo(() => {
+    if (!showOnlyOwnedMaterials) {
+      return buyers;
+    }
+
+    // Create a Set of material IDs that the player owns
+    const ownedMaterialIds = new Set(materials.map((m) => m.res_id));
+
+    // Filter buyers to only those where buy_res_id is in ownedMaterialIds
+    return buyers.filter((buyer) => ownedMaterialIds.has(buyer.buy_res_id));
+  }, [buyers, materials, showOnlyOwnedMaterials]);
 
   const getExpectedEarnings = () => {
     if (!selectedBuyer) return 0;
@@ -145,7 +159,17 @@ export function NpcBuyersPage() {
 
       {/* Buyers Table */}
       <section className="buyers-section">
-        <h3>Available NPC Buyers</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <h3 style={{ margin: 0 }}>Available NPC Buyers</h3>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={showOnlyOwnedMaterials}
+              onChange={(e) => setShowOnlyOwnedMaterials(e.target.checked)}
+            />
+            <span>Show only materials I own</span>
+          </label>
+        </div>
         <table className="data-table">
           <thead>
             <tr>
@@ -157,12 +181,16 @@ export function NpcBuyersPage() {
             </tr>
           </thead>
           <tbody>
-            {buyers.length === 0 ? (
+            {filteredBuyers.length === 0 ? (
               <tr>
-                <td colSpan={5} className="empty-row">No NPC buyers available</td>
+                <td colSpan={5} className="empty-row">
+                  {showOnlyOwnedMaterials && buyers.length > 0
+                    ? 'No NPC buyers available for materials you own'
+                    : 'No NPC buyers available'}
+                </td>
               </tr>
             ) : (
-              buyers.map((buyer) => {
+              filteredBuyers.map((buyer) => {
                 const matInfo = materialsCatalogue.get(buyer.buy_res_id);
                 return (
                   <tr
