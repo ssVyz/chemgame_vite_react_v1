@@ -35,7 +35,7 @@ export function LoginPage() {
   return (
     <div className="login-container">
       <div className="login-box">
-        <h1>ChemGame Login</h1>
+        <h1>ChemFactory Login</h1>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="email">Email:</label>

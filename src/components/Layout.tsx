@@ -14,7 +14,7 @@ export function Layout() {
     <div className="app-layout">
       <header className="app-header">
         <div className="header-left">
-          <h1>ChemGame Client</h1>
+          <h1>ChemFactory Client</h1>
         </div>
         <nav className="header-nav">
           <NavLink to="/dashboard" className={({ isActive }) => isActive ? 'active' : ''}>
