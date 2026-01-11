@@ -38,9 +38,10 @@ export function Layout() {
           <NavLink to="/market" className={({ isActive }) => isActive ? 'active' : ''}>
             🏪 Market
           </NavLink>
-          <NavLink to="/debug" className={({ isActive }) => isActive ? 'active' : ''}>
+          {/* Debug page navigation link hidden for playtesting purposes - route still exists in App.tsx */}
+          {/* <NavLink to="/debug" className={({ isActive }) => isActive ? 'active' : ''}>
             🔧 Debug
-          </NavLink>
+          </NavLink> */}
         </nav>
         <div className="header-right">
           <span className="user-email">{user?.email}</span>

@@ -39,6 +39,7 @@ function App() {
                 <Route path="/process-encyclopedia" element={<ProcessEncyclopediaPage />} />
                 <Route path="/npc-buyers" element={<NpcBuyersPage />} />
                 <Route path="/market" element={<MarketPage />} />
+                {/* Debug route kept but navigation link hidden in Layout.tsx for playtesting purposes */}
                 <Route path="/debug" element={<DebugPage />} />
               </Route>
             </Route>
