@@ -13,6 +13,7 @@ import { ResearchPage } from './pages/ResearchPage';
 import { ProcessEncyclopediaPage } from './pages/ProcessEncyclopediaPage';
 import { NpcBuyersPage } from './pages/NpcBuyersPage';
 import { MarketPage } from './pages/MarketPage';
+import { LeaderboardPage } from './pages/LeaderboardPage';
 import { DebugPage } from './pages/DebugPage';
 
 function App() {
@@ -39,6 +40,7 @@ function App() {
                 <Route path="/process-encyclopedia" element={<ProcessEncyclopediaPage />} />
                 <Route path="/npc-buyers" element={<NpcBuyersPage />} />
                 <Route path="/market" element={<MarketPage />} />
+                <Route path="/leaderboard" element={<LeaderboardPage />} />
                 {/* Debug route kept but navigation link hidden in Layout.tsx for playtesting purposes */}
                 <Route path="/debug" element={<DebugPage />} />
               </Route>

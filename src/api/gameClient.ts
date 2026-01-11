@@ -17,6 +17,7 @@ import type {
   PlayerStorageExtension,
   PlayerExpansion,
   MarketSellOrder,
+  LeaderboardEntry,
   TechnologyCatalogue,
   PlayerTechnologyInventory,
   TechnologyPrerequisite,
@@ -600,6 +601,24 @@ class GameClient {
       }
 
       return { success: true, data };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  // ========================================================================
+  // Leaderboard Methods
+  // ========================================================================
+
+  async fetch_prelim_leaderboard(): Promise<ApiResult<LeaderboardEntry[]>> {
+    try {
+      const { data, error } = await supabase.rpc('fetch_prelim_leaderboard');
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: data as LeaderboardEntry[] };
     } catch (e) {
       return { success: false, error: String(e) };
     }

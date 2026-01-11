@@ -38,6 +38,9 @@ export function Layout() {
           <NavLink to="/market" className={({ isActive }) => isActive ? 'active' : ''}>
             🏪 Market
           </NavLink>
+          <NavLink to="/leaderboard" className={({ isActive }) => isActive ? 'active' : ''}>
+            🏆 Leaderboard
+          </NavLink>
           {/* Debug page navigation link hidden for playtesting purposes - route still exists in App.tsx */}
           {/* <NavLink to="/debug" className={({ isActive }) => isActive ? 'active' : ''}>
             🔧 Debug

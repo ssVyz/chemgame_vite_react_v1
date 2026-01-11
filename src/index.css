@@ -225,7 +225,8 @@ button:disabled {
 .process-encyclopedia-page h2,
 .npc-buyers-page h2,
 .market-page h2,
-.debug-page h2 {
+.debug-page h2,
+.leaderboard-page h2 {
   margin-bottom: 20px;
   color: #333;
 }
@@ -897,6 +898,104 @@ section h4 {
 
 .market-orders-section .data-table tbody tr.my-order:hover {
   background-color: #e0efff;
+}
+
+/* Leaderboard page */
+.leaderboard-page h2 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.top-players-section {
+  margin-bottom: 30px;
+}
+
+.top-players-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.top-player-card {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 2px solid #e0e0e0;
+}
+
+.top-player-card h3 {
+  margin: 0 0 15px 0;
+  color: #555;
+  font-size: 16px;
+  font-weight: 600;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.top-player-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.top-player-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.top-player-value {
+  font-size: 16px;
+  color: #666;
+}
+
+.leaderboard-table-section {
+  margin-top: 20px;
+}
+
+.leaderboard-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  align-items: center;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.leaderboard-controls label {
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+  color: #555;
+  font-size: 13px;
+}
+
+.data-table tbody tr.current-player-row {
+  background-color: #e8f4f8 !important;
+}
+
+.data-table tbody tr.current-player-row:hover {
+  background-color: #d0e8f0 !important;
+}
+
+.data-table .rank-cell {
+  font-weight: 600;
+  color: #666;
+  text-align: center;
+}
+
+.data-table .sortable-header {
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.data-table .sortable-header:hover {
+  color: #667eea;
 }
 
 /* Modal styles */

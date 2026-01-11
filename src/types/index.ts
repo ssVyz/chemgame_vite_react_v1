@@ -153,6 +153,14 @@ export interface MarketSellOrder {
   res_price: number;
 }
 
+// Leaderboard types
+export interface LeaderboardEntry {
+  player_factory: string;
+  player_cash: number;
+  player_pollution: number;
+  build_space_occupied: number;
+}
+
 // Auth types
 export interface AuthUser {
   id: string;
