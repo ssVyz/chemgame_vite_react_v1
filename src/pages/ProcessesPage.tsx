@@ -397,6 +397,114 @@ export function ProcessesPage() {
     }
   };
 
+  const handleBulkEnableAutorun = async () => {
+    if (buildings.length === 0) {
+      setStatus({ type: 'error', message: 'No buildings available' });
+      return;
+    }
+
+    const buildingsWithProcesses = buildings.filter(
+      (bld) => bld.b_proc_installed !== null && bld.b_proc_installed !== 0
+    );
+
+    if (buildingsWithProcesses.length === 0) {
+      setStatus({ type: 'error', message: 'No buildings with installed processes' });
+      return;
+    }
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const building of buildingsWithProcesses) {
+      const result = await gameClient.activate_autorun(building.this_building_id);
+      if (result.success) {
+        successCount++;
+      } else {
+        failCount++;
+      }
+    }
+
+    setStatus({
+      type: successCount > 0 ? 'success' : 'error',
+      message: `Autorun enabled on ${successCount} building(s)${failCount > 0 ? `, ${failCount} failed` : ''}`,
+    });
+    loadData();
+  };
+
+  const handleBulkDisableAutorun = async () => {
+    if (buildings.length === 0) {
+      setStatus({ type: 'error', message: 'No buildings available' });
+      return;
+    }
+
+    const buildingsWithProcesses = buildings.filter(
+      (bld) => bld.b_proc_installed !== null && bld.b_proc_installed !== 0
+    );
+
+    if (buildingsWithProcesses.length === 0) {
+      setStatus({ type: 'error', message: 'No buildings with installed processes' });
+      return;
+    }
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const building of buildingsWithProcesses) {
+      const result = await gameClient.deactivate_autorun(building.this_building_id);
+      if (result.success) {
+        successCount++;
+      } else {
+        failCount++;
+      }
+    }
+
+    setStatus({
+      type: successCount > 0 ? 'success' : 'error',
+      message: `Autorun disabled on ${successCount} building(s)${failCount > 0 ? `, ${failCount} failed` : ''}`,
+    });
+    loadData();
+  };
+
+  const handleBulkUninstall = async () => {
+    if (buildings.length === 0) {
+      setStatus({ type: 'error', message: 'No buildings available' });
+      return;
+    }
+
+    const buildingsWithProcesses = buildings.filter(
+      (bld) => bld.b_proc_installed !== null && bld.b_proc_installed !== 0
+    );
+
+    if (buildingsWithProcesses.length === 0) {
+      setStatus({ type: 'error', message: 'No buildings with installed processes' });
+      return;
+    }
+
+    const confirmMessage = `Uninstall processes on ALL ${buildingsWithProcesses.length} building(s)?\n\nThis can be very costly if processes are expensive to install.\n\nThis action will uninstall processes from all buildings with installed processes.`;
+    
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const building of buildingsWithProcesses) {
+      const result = await gameClient.uninstall_process(building.this_building_id);
+      if (result.success) {
+        successCount++;
+      } else {
+        failCount++;
+      }
+    }
+
+    setStatus({
+      type: successCount > 0 ? 'success' : 'error',
+      message: `Processes uninstalled from ${successCount} building(s)${failCount > 0 ? `, ${failCount} failed` : ''}`,
+    });
+    loadData();
+  };
+
   const formatNumber = (num: number | null | undefined) => {
     if (num === null || num === undefined) return '-';
     return num.toLocaleString();
@@ -424,7 +532,20 @@ export function ProcessesPage() {
 
       {/* Buildings Table */}
       <section className="buildings-processes">
-        <h3>Buildings & Installed Processes</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <h3 style={{ margin: 0 }}>Buildings & Installed Processes</h3>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button onClick={handleBulkEnableAutorun} className="btn-secondary" style={{ fontSize: '12px', padding: '6px 12px' }}>
+              🔄 Enable Autorun All
+            </button>
+            <button onClick={handleBulkDisableAutorun} className="btn-secondary" style={{ fontSize: '12px', padding: '6px 12px' }}>
+              ⏹ Disable Autorun All
+            </button>
+            <button onClick={handleBulkUninstall} className="btn-danger" style={{ fontSize: '12px', padding: '6px 12px' }}>
+              🗑️ Uninstall All Processes
+            </button>
+          </div>
+        </div>
         <table className="data-table">
           <thead>
             <tr>

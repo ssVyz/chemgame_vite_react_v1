@@ -184,6 +184,38 @@ export function BuildingsPage() {
     }
   };
 
+  const handleBulkDemolish = async () => {
+    if (buildings.length === 0) {
+      setStatus({ type: 'error', message: 'No buildings available' });
+      return;
+    }
+
+    const confirmMessage = `Demolish ALL ${buildings.length} building(s)?\n\nBuildings can be expensive. Only buildings that are 'unconfigured' with no process installed can be demolished.\n\nThis action cannot be undone.`;
+    
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const building of buildings) {
+      const result = await gameClient.demolish_building(building.this_building_id);
+      if (result.success) {
+        successCount++;
+      } else {
+        failCount++;
+      }
+    }
+
+    setStatus({
+      type: successCount > 0 ? 'success' : 'error',
+      message: `Demolished ${successCount} building(s)${failCount > 0 ? `, ${failCount} failed (must be unconfigured with no process)` : ''}`,
+    });
+    setSelectedBuilding(null);
+    loadData();
+  };
+
   // Storage Extensions handlers
   const handleBuildStorageExtension = async () => {
     if (!selectedCatalogueExtension) {
@@ -304,7 +336,12 @@ export function BuildingsPage() {
       <div className="buildings-layout">
         {/* Left: Current Buildings */}
         <section className="current-buildings">
-          <h3>Your Buildings</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <h3 style={{ margin: 0 }}>Your Buildings</h3>
+            <button onClick={handleBulkDemolish} className="btn-danger" style={{ fontSize: '12px', padding: '6px 12px' }}>
+              🔨 Demolish All Buildings
+            </button>
+          </div>
           <table className="data-table">
             <thead>
               <tr>
