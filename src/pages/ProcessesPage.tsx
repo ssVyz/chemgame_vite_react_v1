@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { gameClient } from '../api/gameClient';
 import { useGame } from '../context/GameContext';
-import type { PlayerBuilding, ProcessCatalogue, ProcessInput, ProcessOutput, AllowedProcess, PlayerTechnologyInventory } from '../types';
+import type { PlayerBuilding, ProcessCatalogue, ProcessInput, ProcessOutput, AllowedProcess, PlayerTechnologyInventory, ProcessSchedule } from '../types';
 
 // Helper function to format building status
 const formatBuildingStatus = (status: string) => {
@@ -66,6 +66,7 @@ export function ProcessesPage() {
   const [runCount, setRunCount] = useState('1');
   const [playerTech, setPlayerTech] = useState<PlayerTechnologyInventory[]>([]);
   const [showUnavailableProcesses, setShowUnavailableProcesses] = useState(false);
+  const [processSchedule, setProcessSchedule] = useState<ProcessSchedule[]>([]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -91,12 +92,29 @@ export function ProcessesPage() {
       setPlayerTech(techResult.data);
     }
 
+    // Load process schedule for run time remaining
+    const scheduleResult = await gameClient.get_process_schedule();
+    if (scheduleResult.success && scheduleResult.data) {
+      setProcessSchedule(scheduleResult.data);
+    }
+
     setLoading(false);
   }, []);
 
   useEffect(() => {
     loadData();
   }, [loadData, lastRefresh]);
+
+  // Refresh process schedule when lastRefresh changes
+  useEffect(() => {
+    const refreshSchedule = async () => {
+      const scheduleResult = await gameClient.get_process_schedule();
+      if (scheduleResult.success && scheduleResult.data) {
+        setProcessSchedule(scheduleResult.data);
+      }
+    };
+    refreshSchedule();
+  }, [lastRefresh]);
 
   // Load process details (inputs/outputs)
   const loadProcessDetails = useCallback(async (proc_id: number) => {
@@ -510,6 +528,36 @@ export function ProcessesPage() {
     return num.toLocaleString();
   };
 
+  // Calculate remaining time for process installation, uninstallation, or run
+  const getRemainingProcessTime = (building: PlayerBuilding, procInfo: ProcessCatalogue | null): number | null => {
+    if (!procInfo) return null;
+
+    // Check if process is being installed or clearing out (both use proc_install_time)
+    if ((building.b_proc_status === 'being_installed' || building.b_proc_status === 'clearing_out') && building.b_proc_timestamp) {
+      const startTime = new Date(building.b_proc_timestamp).getTime();
+      const installTimeMs = procInfo.proc_install_time * 60 * 1000;
+      const endTime = startTime + installTimeMs;
+      const now = Date.now();
+      const remaining = endTime - now;
+      return remaining > 0 ? Math.ceil(remaining / 1000 / 60) : 0;
+    }
+
+    // Check if process is running - look up in process_schedule
+    if (building.b_proc_status === 'running') {
+      const scheduleEntry = processSchedule.find(
+        (ps) => ps.runs_in_this_building_id === building.this_building_id
+      );
+      if (scheduleEntry && scheduleEntry.ends_at) {
+        const endTime = new Date(scheduleEntry.ends_at).getTime();
+        const now = Date.now();
+        const remaining = endTime - now;
+        return remaining > 0 ? Math.ceil(remaining / 1000 / 60) : 0;
+      }
+    }
+
+    return null;
+  };
+
   const getInstalledProcessInfo = () => {
     if (!selectedBuilding?.b_proc_installed) return null;
     const proc = processCatalogue.get(selectedBuilding.b_proc_installed);
@@ -549,11 +597,11 @@ export function ProcessesPage() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>ID</th>
               <th>Building</th>
               <th>Build Status</th>
               <th>Process</th>
               <th>Proc Status</th>
+              <th>Time Remaining</th>
               <th>Autorun</th>
             </tr>
           </thead>
@@ -572,6 +620,7 @@ export function ProcessesPage() {
                 const buildingStatus = formatBuildingStatus(bld.b_current_status);
                 const processStatus = formatProcessStatus(bld.b_proc_status);
                 const autorunStatus = formatAutorunStatus(bld.b_proc_autorun, hasProcess);
+                const remainingTime = getRemainingProcessTime(bld, procInfo);
 
                 return (
                   <tr
@@ -579,7 +628,6 @@ export function ProcessesPage() {
                     onClick={() => handleBuildingSelect(bld)}
                     className={selectedBuilding?.this_building_id === bld.this_building_id ? 'selected' : ''}
                   >
-                    <td>{bld.this_building_id}</td>
                     <td>{buildingInfo?.building_name || bld.building_code}</td>
                     <td>
                       <span 
@@ -607,6 +655,9 @@ export function ProcessesPage() {
                       ) : (
                         '-'
                       )}
+                    </td>
+                    <td>
+                      {remainingTime !== null ? `${remainingTime} min` : '-'}
                     </td>
                     <td>
                       <span 

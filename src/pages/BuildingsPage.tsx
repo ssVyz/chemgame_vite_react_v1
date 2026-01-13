@@ -297,6 +297,22 @@ export function BuildingsPage() {
     return remaining > 0 ? Math.ceil(remaining / 1000 / 60) : 0;
   };
 
+  // Calculate remaining build time for regular building
+  const getRemainingBuildingTime = (building: PlayerBuilding, catalogue: BuildingCatalogue | undefined): number | null => {
+    if (building.b_current_status !== 'under_construction' || building.b_finished_building) {
+      return null;
+    }
+    if (!catalogue) return null;
+
+    const startTime = new Date(building.created_at).getTime();
+    const buildTimeMs = catalogue.building_build_time * 60 * 1000;
+    const endTime = startTime + buildTimeMs;
+    const now = Date.now();
+    const remaining = endTime - now;
+
+    return remaining > 0 ? Math.ceil(remaining / 1000 / 60) : 0;
+  };
+
   // Filter buildings based on tech requirements
   const completedTechIds = useMemo(() => {
     return new Set(
@@ -345,9 +361,9 @@ export function BuildingsPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>ID</th>
                 <th>Building</th>
                 <th>Status</th>
+                <th>Time Remaining</th>
                 <th>Installed Process</th>
                 <th>Process Status</th>
                 <th>Autorun</th>
@@ -368,6 +384,7 @@ export function BuildingsPage() {
                   const buildingStatus = formatBuildingStatus(bld.b_current_status);
                   const processStatus = formatProcessStatus(bld.b_proc_status);
                   const autorunStatus = formatAutorunStatus(bld.b_proc_autorun, hasProcess);
+                  const remainingTime = getRemainingBuildingTime(bld, buildingInfo);
 
                   return (
                     <tr
@@ -375,7 +392,6 @@ export function BuildingsPage() {
                       onClick={() => setSelectedBuilding(bld)}
                       className={selectedBuilding?.this_building_id === bld.this_building_id ? 'selected' : ''}
                     >
-                      <td>{bld.this_building_id}</td>
                       <td>{buildingInfo?.building_name || bld.building_code}</td>
                       <td>
                         <span 
@@ -387,6 +403,9 @@ export function BuildingsPage() {
                         >
                           {buildingStatus.label}
                         </span>
+                      </td>
+                      <td>
+                        {remainingTime !== null ? `${remainingTime} min` : '-'}
                       </td>
                       <td>{procInfo?.proc_name || (procId ? `Process ${procId}` : '-')}</td>
                       <td>
@@ -505,7 +524,6 @@ export function BuildingsPage() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>ID</th>
                   <th>Extension</th>
                   <th>Status</th>
                   <th>Remaining Time</th>
@@ -514,7 +532,7 @@ export function BuildingsPage() {
               <tbody>
                 {playerStorageExtensions.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="empty-row">No storage extensions yet</td>
+                    <td colSpan={3} className="empty-row">No storage extensions yet</td>
                   </tr>
                 ) : (
                   playerStorageExtensions.map((ext) => {
@@ -532,7 +550,6 @@ export function BuildingsPage() {
                         onClick={() => setSelectedPlayerExtension(ext)}
                         className={selectedPlayerExtension?.this_s_extension_id === ext.this_s_extension_id ? 'selected' : ''}
                       >
-                        <td>{ext.this_s_extension_id}</td>
                         <td>{extensionInfo?.s_extension_name || `Extension ${ext.s_extension_id}`}</td>
                         <td>
                           <span 

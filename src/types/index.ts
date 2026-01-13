@@ -29,8 +29,11 @@ export interface PlayerBuilding {
   this_building_id: number;
   building_id: number;
   building_code: string;
+  created_at: string;
   b_current_status: string;
+  b_finished_building: boolean;
   b_proc_installed: number | null;
+  b_proc_timestamp: string | null;
   b_proc_status: string | null;
   b_proc_autorun: boolean;
 }
