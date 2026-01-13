@@ -614,7 +614,7 @@ export function ProcessesPage() {
               buildings.map((bld) => {
                 const buildingInfo = buildingsCatalogue.get(bld.building_id);
                 const procId = bld.b_proc_installed;
-                const procInfo = procId ? processCatalogue.get(procId) : null;
+                const procInfo = procId ? processCatalogue.get(procId) ?? null : null;
                 const hasProcess = procId !== null && procId !== 0;
                 
                 const buildingStatus = formatBuildingStatus(bld.b_current_status);
