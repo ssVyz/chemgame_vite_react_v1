@@ -207,7 +207,7 @@ export function MarketPage() {
       return;
     }
 
-    if (isNaN(price) || price <= 0) {
+    if (isNaN(price) || price < 0) {
       setStatus({ type: 'error', message: 'Please enter a valid positive price' });
       return;
     }
