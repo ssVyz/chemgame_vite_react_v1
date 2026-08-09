@@ -7,8 +7,7 @@ import { LoginPage } from './pages/LoginPage';
 import { NewPlayerReg } from './pages/NewPlayerReg';
 import { OnboardingPage } from './pages/OnboardingPage';
 import { DashboardPage } from './pages/DashboardPage';
-import { BuildingsPage } from './pages/BuildingsPage';
-import { ProcessesPage } from './pages/ProcessesPage';
+import { FactoryPage } from './pages/FactoryPage';
 import { ResearchPage } from './pages/ResearchPage';
 import { ProcessEncyclopediaPage } from './pages/ProcessEncyclopediaPage';
 import { NpcBuyersPage } from './pages/NpcBuyersPage';
@@ -34,8 +33,10 @@ function App() {
               {/* Other protected routes require player entry */}
               <Route element={<Layout />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/buildings" element={<BuildingsPage />} />
-                <Route path="/processes" element={<ProcessesPage />} />
+                <Route path="/factory" element={<FactoryPage />} />
+                {/* Buildings + Processes consolidated into the Factory tab */}
+                <Route path="/buildings" element={<Navigate to="/factory" replace />} />
+                <Route path="/processes" element={<Navigate to="/factory" replace />} />
                 <Route path="/research" element={<ResearchPage />} />
                 <Route path="/process-encyclopedia" element={<ProcessEncyclopediaPage />} />
                 <Route path="/npc-buyers" element={<NpcBuyersPage />} />

@@ -20,11 +20,8 @@ export function Layout() {
           <NavLink to="/dashboard" className={({ isActive }) => isActive ? 'active' : ''}>
             📊 Dashboard
           </NavLink>
-          <NavLink to="/buildings" className={({ isActive }) => isActive ? 'active' : ''}>
-            🏭 Buildings
-          </NavLink>
-          <NavLink to="/processes" className={({ isActive }) => isActive ? 'active' : ''}>
-            ⚙️ Processes
+          <NavLink to="/factory" className={({ isActive }) => isActive ? 'active' : ''}>
+            🏭 Factory
           </NavLink>
           <NavLink to="/research" className={({ isActive }) => isActive ? 'active' : ''}>
             🔬 Research

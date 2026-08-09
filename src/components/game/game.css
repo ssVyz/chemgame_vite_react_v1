@@ -1,0 +1,60 @@
+/* =============================================================================
+   Game-specific composite components (Factory tab): recipe card, building card,
+   pickers. Built on the ui primitives + tokens.
+   ============================================================================= */
+
+/* ---- Recipe card --------------------------------------------------------- */
+.recipe { display: flex; flex-direction: column; gap: var(--sp-2); }
+.recipe__head { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.recipe__flow {
+  display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-2);
+}
+.recipe__io { display: flex; flex-wrap: wrap; gap: var(--sp-1); align-items: center; min-width: 0; }
+.recipe__arrow { color: var(--color-text-faint); font-weight: 700; padding: 0 2px; }
+.recipe__badges { display: flex; flex-wrap: wrap; gap: var(--sp-1); }
+
+/* ---- Building card ------------------------------------------------------- */
+.bcard { display: flex; flex-direction: column; gap: var(--sp-3); }
+.bcard__head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); }
+.bcard__title { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+.bcard__title strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bcard__id { color: var(--color-text-faint); font-family: var(--font-mono); font-size: var(--fs-xs); }
+.bcard__timer { font-family: var(--font-mono); color: var(--color-info); font-size: var(--fs-sm); }
+.bcard__empty { color: var(--color-text-faint); font-style: italic; font-size: var(--fs-sm); padding: var(--sp-2) 0; }
+.bcard__actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
+.bcard__autorun { font-size: var(--fs-xs); color: var(--color-text-muted); }
+
+.runbox { display: inline-flex; align-items: center; gap: 4px; }
+.factory-input {
+  font-family: var(--font-mono);
+  width: 64px;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-sm);
+}
+
+/* ---- Toolbar ------------------------------------------------------------- */
+.factory-toolbar {
+  display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center;
+  margin-bottom: var(--sp-4);
+}
+.factory-toolbar .spacer { flex: 1 1 auto; }
+
+/* ---- Picker (modal grids) ------------------------------------------------ */
+.picker-grid { display: grid; gap: var(--sp-3); grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.picker-controls {
+  display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap;
+  width: 100%;
+}
+.picker-controls .spacer { flex: 1 1 auto; }
+.type-card__meta { display: flex; flex-wrap: wrap; gap: var(--sp-1); margin-top: var(--sp-2); }
+.picker-warn { color: var(--color-danger); font-size: var(--fs-sm); }
+
+@media (max-width: 640px) {
+  .picker-grid { grid-template-columns: 1fr; }
+}

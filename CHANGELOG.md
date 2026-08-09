@@ -11,6 +11,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-08-08
+
+Phase 2 of the frontend rework: the consolidated Factory tab.
+
+### Added
+- New **Factory** tab (`/factory`) that merges building and process management
+  into one place (D1):
+  - Building cards with inline actions — install / uninstall process, run
+    (with run count), autorun on/off, demolish — plus live status badges and
+    construction/process timers.
+  - Reusable **RecipeCard** (D5): process inputs → outputs as color material
+    chips, with run cost/time/pollution (and install cost/time in pickers)
+    (`src/components/game/RecipeCard.tsx`).
+  - Card-based **pickers** (D3): build a building, install a process, and build
+    a storage extension — each with cash / building-space / tech gating.
+  - **Batch build** (build N of a building type) and **batch install** (install
+    a process into N empty buildings of the same type).
+  - Bulk actions: autorun all / none, uninstall all, demolish all.
+  - Storage extensions are managed here too (build via picker, demolish inline).
+
+### Changed
+- `/buildings` and `/processes` now redirect to `/factory`; the nav shows a
+  single “🏭 Factory” entry (the old Buildings/Processes pages are superseded).
+
 ## [0.1.2] - 2026-08-08
 
 Phase 1 of the frontend rework (foundation + Dashboard). Existing pages remain
@@ -60,6 +84,7 @@ backward-compatible.
 - Supabase-backed game client API wrapper (`src/api/gameClient.ts`, `src/api/supabase.ts`).
 
 [Unreleased]: #unreleased
+[0.1.3]: #013---2026-08-08
 [0.1.2]: #012---2026-08-08
 [0.1.1]: #011---2026-08-08
 [0.1.0]: #010---2026-08-08
