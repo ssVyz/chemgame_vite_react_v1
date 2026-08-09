@@ -224,6 +224,38 @@ class GameClient {
     }
   }
 
+  // Bulk relation fetches (whole table in one query) — used by the central
+  // game store so it doesn't have to call the per-id variants 65+ times.
+  async get_all_process_inputs(): Promise<ApiResult<ProcessInput[]>> {
+    try {
+      const { data, error } = await supabase.from('process_inputs').select('*');
+      if (error) return { success: false, error: error.message };
+      return { success: true, data: data as ProcessInput[] };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  async get_all_process_outputs(): Promise<ApiResult<ProcessOutput[]>> {
+    try {
+      const { data, error } = await supabase.from('process_outputs').select('*');
+      if (error) return { success: false, error: error.message };
+      return { success: true, data: data as ProcessOutput[] };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  async get_all_buildings_allowed_processes(): Promise<ApiResult<AllowedProcess[]>> {
+    try {
+      const { data, error } = await supabase.from('buildings_allowed_processes').select('*');
+      if (error) return { success: false, error: error.message };
+      return { success: true, data: data as AllowedProcess[] };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
   async get_process_inputs(proc_id: number): Promise<ApiResult<ProcessInput[]>> {
     try {
       const { data, error } = await supabase

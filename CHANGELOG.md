@@ -11,6 +11,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-08-08
+
+Phase 1 of the frontend rework (foundation + Dashboard). Existing pages remain
+backward-compatible.
+
+### Added
+- Design-system foundation: CSS design tokens (`src/styles/tokens.css`) and
+  reusable UI primitives — `Card`, `StatTile`, `Meter`, `Badge`, `MaterialChip`,
+  `Modal` (`src/components/ui/`). Light mode, responsive.
+- Helper libs: `src/lib/format.ts` (number/duration/time-remaining) and
+  `src/lib/icons.ts` (placeholder building/process emoji, material-phase helpers).
+- Central game store: `GameContext` now loads all catalogues, relations (recipes,
+  allowed processes, tech prerequisites) and live player state once, exposing
+  `refreshAll`/`refreshPlayer` plus `getRecipe`/`isBuildingUnlocked`/`isProcessUnlocked`.
+- Bulk relation fetches in `gameClient`: `get_all_process_inputs`,
+  `get_all_process_outputs`, `get_all_buildings_allowed_processes`.
+
+### Changed
+- Reworked the Dashboard into a factory overview: vital-stat tiles (cash,
+  pollution, building space, building count), storage meters (dry/fluid/gas),
+  a buildings-at-a-glance grid with live status badges/timers, and
+  clutter-managed storage contents (grouped by phase, with filter and show-all)
+  using color-coded material chips. Dispose and building-space upgrade preserved.
+
 ## [0.1.1] - 2026-08-08
 
 ### Fixed
@@ -36,5 +60,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Supabase-backed game client API wrapper (`src/api/gameClient.ts`, `src/api/supabase.ts`).
 
 [Unreleased]: #unreleased
+[0.1.2]: #012---2026-08-08
 [0.1.1]: #011---2026-08-08
 [0.1.0]: #010---2026-08-08
