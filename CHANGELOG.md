@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-08-08
+
+### Fixed
+- Building-space expansion cost was one power of ten too high (the base tier was
+  skipped): the client computed `base_cost * 10^expansion_level`, so the first
+  extension cost `base_cost * 10` instead of `base_cost`. Now uses
+  `10^(expansion_level - 1)` in `DashboardPage`, matching the corresponding DB
+  fix to `upgrade_building_space`. Pricing is now base, base×10, base×100, …
+
 ## [0.1.0] - 2026-08-08
 
 ### Added
@@ -27,4 +36,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Supabase-backed game client API wrapper (`src/api/gameClient.ts`, `src/api/supabase.ts`).
 
 [Unreleased]: #unreleased
+[0.1.1]: #011---2026-08-08
 [0.1.0]: #010---2026-08-08

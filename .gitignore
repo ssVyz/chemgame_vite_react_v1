@@ -1,5 +1,6 @@
 current_db/
 old_files/
+db_migrations/
 
 
 # Python-generated files
@@ -24,8 +25,6 @@ env/
 secrets/
 .envrc
 
-# Ignore jason!
-*.json
 
 # ignore claude
 .claude/

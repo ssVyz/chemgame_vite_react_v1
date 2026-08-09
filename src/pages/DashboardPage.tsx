@@ -115,7 +115,8 @@ export function DashboardPage() {
 
     const expansionLevel = playerExpansion?.expansion_level || 1;
     const baseCost = playerExpansion?.base_cost || 500;
-    const cost = baseCost * Math.pow(10, expansionLevel);
+    // Level 1 (first extension) costs the base value; each following one x10.
+    const cost = baseCost * Math.pow(10, expansionLevel - 1);
 
     if (player.player_cash < cost) {
       setUpgradeStatus({ type: 'error', message: 'Not enough cash to upgrade building space' });
@@ -146,7 +147,8 @@ export function DashboardPage() {
   const getNextUpgradeCost = (): number => {
     const expansionLevel = playerExpansion?.expansion_level || 1;
     const baseCost = playerExpansion?.base_cost || 500;
-    return baseCost * Math.pow(10, expansionLevel);
+    // Level 1 (first extension) costs the base value; each following one x10.
+    return baseCost * Math.pow(10, expansionLevel - 1);
   };
 
   // Filter and sort materials by phase
