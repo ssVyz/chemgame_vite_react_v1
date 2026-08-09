@@ -1,408 +1,204 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { gameClient } from '../api/gameClient';
 import { useGame } from '../context/GameContext';
-import type {
-  TechnologyCatalogue,
-  PlayerTechnologyInventory,
-  TechnologyPrerequisite,
-  TechnologyResearchMaterial,
-  MaterialCatalogue,
-} from '../types';
+import type { BuildingCatalogue, ProcessCatalogue } from '../types';
+import { Card, Badge, MaterialChip } from '../components/ui';
+import type { BadgeTone } from '../components/ui';
+import { buildingIcon, processIcon } from '../lib/icons';
+import { formatNumber, formatMinutes } from '../lib/format';
+import { useHashFocus } from '../lib/useHashFocus';
+import type { ActionStatus } from '../lib/status';
 
-type TechnologyStatus = 'completed' | 'in_progress' | 'available' | 'locked' | 'not_available';
+type TechStatus = 'completed' | 'in_progress' | 'available' | 'locked';
 
-interface TechnologyWithDetails extends TechnologyCatalogue {
-  status: TechnologyStatus;
-  prerequisites: TechnologyCatalogue[];
-  requiredMaterials: Array<TechnologyResearchMaterial & { material: MaterialCatalogue | undefined }>;
-  playerTech?: PlayerTechnologyInventory;
-  remainingTime?: number; // in minutes
-}
+const STATUS_META: Record<TechStatus, { tone: BadgeTone; label: string }> = {
+  completed: { tone: 'success', label: '✓ Researched' },
+  in_progress: { tone: 'info', label: '⏳ In progress' },
+  available: { tone: 'primary', label: '🔓 Available' },
+  locked: { tone: 'neutral', label: '🔒 Locked' },
+};
 
 export function ResearchPage() {
-  const { materialsCatalogue, lastRefresh } = useGame();
-  const [technologies, setTechnologies] = useState<TechnologyCatalogue[]>([]);
-  const [playerTech, setPlayerTech] = useState<PlayerTechnologyInventory[]>([]);
-  const [prerequisites, setPrerequisites] = useState<TechnologyPrerequisite[]>([]);
-  const [researchMaterials, setResearchMaterials] = useState<TechnologyResearchMaterial[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [showOnlyResearchable, setShowOnlyResearchable] = useState(false);
-  const [currentTime, setCurrentTime] = useState(Date.now());
+  const {
+    technologyCatalogue, technologyInventory, techRequired, techResearchMaterials,
+    completedTechIds, materialsCatalogue, buildingsCatalogue, processCatalogue,
+    cataloguesLoaded, refreshPlayer,
+  } = useGame();
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    setError('');
+  const [status, setStatus] = useState<ActionStatus | null>(null);
+  const [onlyResearchable, setOnlyResearchable] = useState(false);
+  const [now, setNow] = useState(Date.now());
 
-    try {
-      const [techResult, playerTechResult, prereqResult, materialsResult] = await Promise.all([
-        gameClient.get_technology_catalogue(),
-        gameClient.get_player_technology_inventory(),
-        gameClient.get_technology_prerequisites(),
-        gameClient.get_technology_research_materials(),
-      ]);
+  useHashFocus(cataloguesLoaded);
 
-      if (!techResult.success) throw new Error(techResult.error || 'Failed to load technologies');
-      if (!playerTechResult.success) throw new Error(playerTechResult.error || 'Failed to load player technologies');
-      if (!prereqResult.success) throw new Error(prereqResult.error || 'Failed to load prerequisites');
-      if (!materialsResult.success) throw new Error(materialsResult.error || 'Failed to load research materials');
-
-      setTechnologies(techResult.data || []);
-      setPlayerTech(playerTechResult.data || []);
-      setPrerequisites(prereqResult.data || []);
-      setResearchMaterials(materialsResult.data || []);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load data');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData, lastRefresh]);
-
-  // Create lookup maps
-  const playerTechMap = useMemo(() => {
-    const map = new Map<number, PlayerTechnologyInventory>();
-    playerTech.forEach((pt) => map.set(pt.tech_id, pt));
-    return map;
-  }, [playerTech]);
-
-  const techCatalogueMap = useMemo(() => {
-    const map = new Map<number, TechnologyCatalogue>();
-    technologies.forEach((tech) => map.set(tech.tech_id, tech));
-    return map;
-  }, [technologies]);
-
-  const completedTechIds = useMemo(() => {
-    return new Set(
-      playerTech.filter((pt) => pt.tech_status === 'completed').map((pt) => pt.tech_id)
-    );
-  }, [playerTech]);
-
-  // Build prerequisites map: tech_id -> required tech IDs
-  const prerequisitesMap = useMemo(() => {
-    const map = new Map<number, number[]>();
-    prerequisites.forEach((prereq) => {
-      const existing = map.get(prereq.tech_to_research) || [];
-      existing.push(prereq.tech_required);
-      map.set(prereq.tech_to_research, existing);
+  // What each tech unlocks
+  const unlocks = useMemo(() => {
+    const b = new Map<number, BuildingCatalogue[]>();
+    const p = new Map<number, ProcessCatalogue[]>();
+    buildingsCatalogue.forEach((bld) => {
+      if (bld.building_tech_req != null) {
+        const arr = b.get(bld.building_tech_req); if (arr) arr.push(bld); else b.set(bld.building_tech_req, [bld]);
+      }
     });
-    return map;
-  }, [prerequisites]);
-
-  // Build materials map: tech_id -> materials
-  const materialsMap = useMemo(() => {
-    const map = new Map<number, TechnologyResearchMaterial[]>();
-    researchMaterials.forEach((mat) => {
-      const existing = map.get(mat.tech_id) || [];
-      existing.push(mat);
-      map.set(mat.tech_id, existing);
+    processCatalogue.forEach((proc) => {
+      if (proc.proc_tech_req != null) {
+        const arr = p.get(proc.proc_tech_req); if (arr) arr.push(proc); else p.set(proc.proc_tech_req, [proc]);
+      }
     });
-    return map;
-  }, [researchMaterials]);
+    return { buildings: b, processes: p };
+  }, [buildingsCatalogue, processCatalogue]);
 
-  // Calculate remaining time for in-progress research
-  // Now uses techCatalogueMap lookup instead of embedded data
-  const calculateRemainingTime = useCallback((playerTechItem: PlayerTechnologyInventory): number => {
-    const techCatalogue = techCatalogueMap.get(playerTechItem.tech_id);
-    if (!techCatalogue) return 0;
-    const startTime = new Date(playerTechItem.created_at).getTime();
-    const now = currentTime;
-    const elapsedMinutes = Math.floor((now - startTime) / (1000 * 60));
-    const remaining = techCatalogue.tech_time - elapsedMinutes;
-    return Math.max(0, remaining);
-  }, [currentTime, techCatalogueMap]);
+  const inv = useMemo(() => {
+    const m = new Map<number, (typeof technologyInventory)[number]>();
+    technologyInventory.forEach((t) => m.set(t.tech_id, t));
+    return m;
+  }, [technologyInventory]);
 
-  // Determine technology status and build details
-  const technologiesWithDetails = useMemo((): TechnologyWithDetails[] => {
-    return technologies.map((tech) => {
-      const playerTechItem = playerTechMap.get(tech.tech_id);
-      const prereqIds = prerequisitesMap.get(tech.tech_id) || [];
-      const techMaterials = materialsMap.get(tech.tech_id) || [];
-
-      let status: TechnologyStatus;
-      let remainingTime: number | undefined;
-
-      if (playerTechItem) {
-        if (playerTechItem.tech_status === 'completed') {
-          status = 'completed';
-        } else {
-          status = 'in_progress';
-          remainingTime = calculateRemainingTime(playerTechItem);
+  const techs = useMemo(() => {
+    const list = Array.from(technologyCatalogue.values()).map((tech) => {
+      const item = inv.get(tech.tech_id);
+      const prereqIds = techRequired.get(tech.tech_id) ?? [];
+      let st: TechStatus;
+      let remaining: number | undefined;
+      if (item) {
+        if (item.tech_status === 'completed') st = 'completed';
+        else {
+          st = 'in_progress';
+          const elapsedMin = Math.floor((now - new Date(item.created_at).getTime()) / 60000);
+          remaining = Math.max(0, tech.tech_time - elapsedMin);
         }
       } else {
-        // Check prerequisites (OR logic - need at least ONE)
-        if (prereqIds.length === 0) {
-          status = 'available';
-        } else {
-          const hasPrerequisite = prereqIds.some((prereqId) => completedTechIds.has(prereqId));
-          status = hasPrerequisite ? 'available' : 'locked';
-        }
+        st = prereqIds.length === 0 || prereqIds.some((id) => completedTechIds.has(id)) ? 'available' : 'locked';
       }
-
-      // Get prerequisite technologies
-      const prereqTechs = prereqIds
-        .map((id) => technologies.find((t) => t.tech_id === id))
-        .filter((t): t is TechnologyCatalogue => t !== undefined);
-
-      // Get required materials with catalogue info
-      const requiredMaterials = techMaterials.map((mat) => ({
-        ...mat,
-        material: materialsCatalogue.get(mat.res_id),
-      }));
-
-      return {
-        ...tech,
-        status,
-        prerequisites: prereqTechs,
-        requiredMaterials,
-        playerTech: playerTechItem,
-        remainingTime,
-      };
+      return { tech, status: st, prereqIds, remaining };
     });
-  }, [
-    technologies,
-    playerTechMap,
-    prerequisitesMap,
-    materialsMap,
-    completedTechIds,
-    calculateRemainingTime,
-    materialsCatalogue,
-  ]);
+    return list.sort((a, b) => a.tech.tech_id - b.tech.tech_id);
+  }, [technologyCatalogue, inv, techRequired, completedTechIds, now]);
 
-  // Filter technologies
-  const filteredTechnologies = useMemo(() => {
-    if (!showOnlyResearchable) {
-      return technologiesWithDetails;
-    }
-    return technologiesWithDetails.filter((tech) => tech.status === 'available');
-  }, [technologiesWithDetails, showOnlyResearchable]);
+  const visible = onlyResearchable ? techs.filter((t) => t.status === 'available') : techs;
+  const anyInProgress = techs.some((t) => t.status === 'in_progress');
 
-  // Get player's research status
-  const completedResearch = useMemo(() => {
-    return technologiesWithDetails.filter((tech) => tech.status === 'completed');
-  }, [technologiesWithDetails]);
-
-  const inProgressResearch = useMemo(() => {
-    return technologiesWithDetails.filter((tech) => tech.status === 'in_progress');
-  }, [technologiesWithDetails]);
-
-  // Update remaining time every minute for in-progress research
+  // Tick remaining time while research is running
   useEffect(() => {
-    if (inProgressResearch.length === 0) return;
+    if (!anyInProgress) return;
+    const iv = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(iv);
+  }, [anyInProgress]);
 
-    const interval = setInterval(() => {
-      setCurrentTime(Date.now());
-    }, 60000); // Update every minute
-
-    return () => clearInterval(interval);
-  }, [inProgressResearch.length]);
-
-  const handleStartResearch = async (techId: number) => {
-    const tech = technologies.find((t) => t.tech_id === techId);
+  const startResearch = async (techId: number) => {
+    const tech = technologyCatalogue.get(techId);
     if (!tech) return;
-
-    if (!window.confirm(`Start research on "${tech.tech_name}"?\n\nCost: ${tech.tech_cost.toLocaleString()} cash\nTime: ${tech.tech_time} minutes`)) {
-      return;
-    }
-
-    setStatus(null);
-    const result = await gameClient.start_research(techId);
-    if (result.success) {
-      setStatus({ type: 'success', message: `Started research on "${tech.tech_name}"` });
-      await loadData();
-    } else {
-      setStatus({ type: 'error', message: `Failed to start research: ${result.error}` });
-    }
+    if (!window.confirm(`Start research on "${tech.tech_name}"?\n\nCost: ${formatNumber(tech.tech_cost)} cash\nTime: ${formatMinutes(tech.tech_time)}`)) return;
+    const r = await gameClient.start_research(techId);
+    if (r.success) { setStatus({ type: 'success', message: `Started research: ${tech.tech_name}` }); await refreshPlayer(); }
+    else setStatus({ type: 'error', message: `Failed: ${r.error}` });
   };
 
-  const formatNumber = (num: number | null | undefined) => {
-    if (num === null || num === undefined) return '-';
-    return num.toLocaleString();
+  if (!cataloguesLoaded) return <div className="loading">Loading research…</div>;
+
+  const counts = {
+    done: techs.filter((t) => t.status === 'completed').length,
+    prog: techs.filter((t) => t.status === 'in_progress').length,
+    avail: techs.filter((t) => t.status === 'available').length,
   };
-
-  const formatTime = (minutes: number) => {
-    if (minutes < 60) {
-      return `${minutes} min`;
-    }
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-  };
-
-  const getStatusBadge = (status: TechnologyStatus) => {
-    switch (status) {
-      case 'completed':
-        return <span className="status-badge completed">✓ Researched</span>;
-      case 'in_progress':
-        return <span className="status-badge in-progress">⏳ In Progress</span>;
-      case 'available':
-        return <span className="status-badge available">🔓 Available</span>;
-      case 'locked':
-        return <span className="status-badge locked">🔒 Locked</span>;
-      default:
-        return null;
-    }
-  };
-
-  if (loading && technologies.length === 0) {
-    return <div className="loading">Loading research data...</div>;
-  }
-
-  if (error) {
-    return <div className="error">Error: {error}</div>;
-  }
 
   return (
-    <div className="research-page">
-      <h2>🔬 Research</h2>
+    <div className="ui-page">
+      <div className="ui-page-head"><h2>🔬 Research</h2></div>
 
-      {/* Player's Research Status */}
-      <section className="player-research-status">
-        <h3>Your Research Status</h3>
+      <div className="factory-toolbar">
+        <Badge tone="success">{counts.done} researched</Badge>
+        <Badge tone="info">{counts.prog} in progress</Badge>
+        <Badge tone="primary">{counts.avail} available</Badge>
+        <span className="spacer" />
+        <label className="ui-cluster" style={{ gap: 4, fontSize: 'var(--fs-sm)' }}>
+          <input type="checkbox" checked={onlyResearchable} onChange={(e) => setOnlyResearchable(e.target.checked)} />
+          only researchable
+        </label>
+      </div>
 
-        {/* Completed Research */}
-        {completedResearch.length > 0 && (
-          <div className="research-section">
-            <h4 className="research-headline completed-headline">✓ Completed Research ({completedResearch.length})</h4>
-            <div className="tech-grid">
-              {completedResearch.map((tech) => (
-                <div key={tech.tech_id} className="tech-card completed">
-                  <div className="tech-card-header">
-                    <h5 className="tech-name">{tech.tech_name}</h5>
-                    {getStatusBadge(tech.status)}
+      {status && <div className={`status-message ${status.type}`} style={{ marginBottom: 'var(--sp-4)' }}>{status.message}</div>}
+
+      {visible.length === 0 ? (
+        <Card pad><div className="ui-empty">No technologies match the filter.</div></Card>
+      ) : (
+        <div className="ui-grid ui-grid--wide">
+          {visible.map(({ tech, status: st, prereqIds, remaining }) => {
+            const meta = STATUS_META[st];
+            const mats = techResearchMaterials.get(tech.tech_id) ?? [];
+            const uBuildings = unlocks.buildings.get(tech.tech_id) ?? [];
+            const uProcesses = unlocks.processes.get(tech.tech_id) ?? [];
+            return (
+              <Card key={tech.tech_id} pad hover>
+                <div id={`tech-${tech.tech_id}`} className="ui-stack">
+                  <div className="ui-row-between">
+                    <strong>{tech.tech_name}</strong>
+                    <Badge tone={meta.tone} dot>{meta.label}</Badge>
                   </div>
-                  <div className="tech-details">
-                    <p><strong>ID:</strong> {tech.tech_id}</p>
+                  <div className="ui-cluster">
+                    <Badge>💰 {formatNumber(tech.tech_cost)}</Badge>
+                    <Badge>⏱️ {formatMinutes(tech.tech_time)}</Badge>
+                    {st === 'in_progress' && remaining != null && <Badge tone="info">⏳ {formatMinutes(remaining)} left</Badge>}
                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
-        {/* In Progress Research */}
-        {inProgressResearch.length > 0 && (
-          <div className="research-section">
-            <h4 className="research-headline in-progress-headline">⏳ Research In Progress ({inProgressResearch.length})</h4>
-            <div className="tech-grid">
-              {inProgressResearch.map((tech) => (
-                <div key={tech.tech_id} className="tech-card in-progress">
-                  <div className="tech-card-header">
-                    <h5 className="tech-name">{tech.tech_name}</h5>
-                    {getStatusBadge(tech.status)}
-                  </div>
-                  <div className="tech-details">
-                    <p><strong>ID:</strong> {tech.tech_id}</p>
-                    {tech.remainingTime !== undefined && (
-                      <p><strong>Time Remaining:</strong> {formatTime(tech.remainingTime)}</p>
-                    )}
-                    <p><strong>Total Time:</strong> {formatTime(tech.tech_time)}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {completedResearch.length === 0 && inProgressResearch.length === 0 && (
-          <div className="empty-state">No research completed or in progress.</div>
-        )}
-      </section>
-
-      {/* Technology Catalogue */}
-      <section className="technology-catalogue">
-        <div className="catalogue-header">
-          <h3>Technology Catalogue</h3>
-          <label className="filter-toggle">
-            <input
-              type="checkbox"
-              checked={showOnlyResearchable}
-              onChange={(e) => setShowOnlyResearchable(e.target.checked)}
-            />
-            Show only researchable technologies
-          </label>
-        </div>
-
-        <div className="filter-results-count" style={{ marginBottom: '15px', color: '#666', fontSize: '14px' }}>
-          Showing {filteredTechnologies.length} of {technologies.length} technologies
-        </div>
-
-        {filteredTechnologies.length === 0 ? (
-          <div className="empty-state">No technologies match the current filter.</div>
-        ) : (
-          <div className="tech-catalogue-grid">
-            {filteredTechnologies.map((tech) => (
-              <div key={tech.tech_id} className={`tech-card ${tech.status}`}>
-                <div className="tech-card-header">
-                  <h4 className="tech-name">{tech.tech_name}</h4>
-                  {getStatusBadge(tech.status)}
-                </div>
-
-                <div className="tech-details">
-                  <p><strong>ID:</strong> {tech.tech_id}</p>
-                  <p><strong>Cost:</strong> {formatNumber(tech.tech_cost)} cash</p>
-                  <p><strong>Research Time:</strong> {formatTime(tech.tech_time)}</p>
-                </div>
-
-                {/* Prerequisites */}
-                {tech.prerequisites.length > 0 && (
-                  <div className="tech-prerequisites">
-                    <h5>Prerequisites (need any one):</h5>
-                    <ul>
-                      {tech.prerequisites.map((prereq) => {
-                        const isCompleted = completedTechIds.has(prereq.tech_id);
+                  {prereqIds.length > 0 && (
+                    <div className="unlocks__row">
+                      <span className="unlocks__label">Needs any</span>
+                      {prereqIds.map((id) => {
+                        const done = completedTechIds.has(id);
                         return (
-                          <li key={prereq.tech_id} className={isCompleted ? 'completed' : 'missing'}>
-                            {isCompleted ? '✓' : '✗'} {prereq.tech_name}
-                          </li>
+                          <Link key={id} className="xchip" to={`/research#tech-${id}`}>
+                            {done ? '✓' : '✗'} {technologyCatalogue.get(id)?.tech_name ?? `Tech ${id}`}
+                          </Link>
                         );
                       })}
-                    </ul>
-                  </div>
-                )}
+                    </div>
+                  )}
 
-                {/* Required Materials */}
-                {tech.requiredMaterials.length > 0 && (
-                  <div className="tech-materials">
-                    <h5>Required Materials:</h5>
-                    <ul>
-                      {tech.requiredMaterials.map((mat) => (
-                        <li key={mat.res_id}>
-                          {mat.material?.res_name || `Material ${mat.res_id}`}: {formatNumber(mat.res_amount)}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                  {mats.length > 0 && (
+                    <div className="unlocks__row">
+                      <span className="unlocks__label">Materials</span>
+                      {mats.map((m) => {
+                        const info = materialsCatalogue.get(m.res_id);
+                        return <MaterialChip key={m.res_id} name={info?.res_name || `#${m.res_id}`} color1={info?.res_color1} color2={info?.res_color2} amount={m.res_amount} />;
+                      })}
+                    </div>
+                  )}
 
-                {/* Action Button */}
-                {tech.status === 'available' && (
-                  <button
-                    onClick={() => handleStartResearch(tech.tech_id)}
-                    className="btn-primary start-research-btn"
-                  >
-                    🔬 Start Research
-                  </button>
-                )}
+                  {(uBuildings.length > 0 || uProcesses.length > 0) && (
+                    <div className="unlocks">
+                      {uBuildings.length > 0 && (
+                        <div className="unlocks__row">
+                          <span className="unlocks__label">Unlocks 🏭</span>
+                          {uBuildings.map((b) => (
+                            <span key={b.building_id} className="xchip" style={{ cursor: 'default' }}>
+                              {buildingIcon(b.building_code)} {b.building_name}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {uProcesses.length > 0 && (
+                        <div className="unlocks__row">
+                          <span className="unlocks__label">Unlocks ⚙️</span>
+                          {uProcesses.map((p) => (
+                            <Link key={p.proc_id} className="xchip" to={`/process-encyclopedia#proc-${p.proc_id}`}>
+                              {processIcon(p.proc_category)} {p.proc_name}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
-                {tech.status === 'locked' && (
-                  <div className="locked-message" style={{ marginTop: '10px', color: '#999', fontSize: '14px' }}>
-                    Complete at least one prerequisite to unlock
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {status && (
-        <div className={`status-message ${status.type}`} style={{ marginTop: '20px' }}>
-          {status.message}
+                  {st === 'available' && (
+                    <button className="ui-btn ui-btn--primary ui-btn--sm" onClick={() => startResearch(tech.tech_id)}>🔬 Start research</button>
+                  )}
+                  {st === 'locked' && <div className="ui-faint" style={{ fontSize: 'var(--fs-sm)' }}>Complete a prerequisite to unlock.</div>}
+                </div>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

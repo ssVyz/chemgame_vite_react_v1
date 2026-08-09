@@ -11,6 +11,7 @@ import type {
   NpcBuyer,
   ProcessInput,
   ProcessOutput,
+  TechnologyResearchMaterial,
   Player,
   PlayerMaterial,
   PlayerBuilding,
@@ -40,6 +41,7 @@ interface GameContextType {
   processOutputs: Map<number, ProcessOutput[]>;  // by proc_id
   allowedProcesses: Map<number, number[]>;       // building_id -> proc_id[]
   techRequired: Map<number, number[]>;           // tech_to_research -> required tech ids
+  techResearchMaterials: Map<number, TechnologyResearchMaterial[]>; // tech_id -> materials
 
   // Live player state
   player: Player | null;
@@ -102,6 +104,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [processOutputs, setProcessOutputs] = useState<Map<number, ProcessOutput[]>>(new Map());
   const [allowedProcesses, setAllowedProcesses] = useState<Map<number, number[]>>(new Map());
   const [techRequired, setTechRequired] = useState<Map<number, number[]>>(new Map());
+  const [techResearchMaterials, setTechResearchMaterials] = useState<Map<number, TechnologyResearchMaterial[]>>(new Map());
 
   // Player state
   const [player, setPlayer] = useState<Player | null>(null);
@@ -120,7 +123,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const loadCatalogues = useCallback(async () => {
     const [
       buildings, processes, materials, tech, storageExt, npc,
-      inputs, outputs, allowed, prereqs,
+      inputs, outputs, allowed, prereqs, researchMats,
     ] = await Promise.all([
       gameClient.get_buildings_catalogue(),
       gameClient.get_process_catalogue(),
@@ -132,6 +135,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       gameClient.get_all_process_outputs(),
       gameClient.get_all_buildings_allowed_processes(),
       gameClient.get_technology_prerequisites(),
+      gameClient.get_technology_research_materials(),
     ]);
 
     if (buildings.success && buildings.data) setBuildingsCatalogue(indexBy(buildings.data, (b) => b.building_id));
@@ -159,6 +163,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
         else m.set(r.tech_to_research, [r.tech_required]);
       });
       setTechRequired(m);
+    }
+    if (researchMats.success && researchMats.data) {
+      setTechResearchMaterials(groupBy(researchMats.data, (r) => r.tech_id));
     }
 
     setCataloguesLoaded(true);
@@ -205,6 +212,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       setProcessOutputs(new Map());
       setAllowedProcesses(new Map());
       setTechRequired(new Map());
+      setTechResearchMaterials(new Map());
       setPlayer(null);
       setMaterialsInventory([]);
       setBuildingsInventory([]);
@@ -251,7 +259,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return {
       buildingsCatalogue, processCatalogue, materialsCatalogue, technologyCatalogue,
       storageExtensionsCatalogue, npcBuyers,
-      processInputs, processOutputs, allowedProcesses, techRequired,
+      processInputs, processOutputs, allowedProcesses, techRequired, techResearchMaterials,
       player, materialsInventory, buildingsInventory, storageExtensionsInventory,
       technologyInventory, expansion, processSchedule, eventsSchedule, completedTechIds,
       cataloguesLoaded, playerLoaded, lastRefresh,
@@ -261,7 +269,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [
     buildingsCatalogue, processCatalogue, materialsCatalogue, technologyCatalogue,
     storageExtensionsCatalogue, npcBuyers, processInputs, processOutputs, allowedProcesses,
-    techRequired, player, materialsInventory, buildingsInventory, storageExtensionsInventory,
+    techRequired, techResearchMaterials, player, materialsInventory, buildingsInventory, storageExtensionsInventory,
     technologyInventory, expansion, processSchedule, eventsSchedule, completedTechIds,
     cataloguesLoaded, playerLoaded, lastRefresh, refreshAll, refreshPlayer,
   ]);

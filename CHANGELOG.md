@@ -11,6 +11,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-08-08
+
+Phase 3 of the frontend rework: cross-linked Research ↔ Process Encyclopedia (D4-A).
+
+### Added
+- Cross-links between the Research and Process Encyclopedia tabs:
+  - Research tech cards show **Unlocks** — the buildings and processes each tech
+    gates; process links jump to the encyclopedia (scroll + highlight).
+  - Encyclopedia process cards show **Requires tech** (links to Research) and
+    **Runs in** (compatible buildings).
+  - Prerequisite chips jump between tech cards within the Research page.
+  - `useHashFocus` hook (`src/lib/useHashFocus.ts`): hash-anchored scroll-to +
+    brief highlight that powers the cross-links.
+- Tech research materials added to the central game store.
+
+### Changed
+- Reworked Research and Process Encyclopedia onto the design system + central
+  store + reusable `RecipeCard` (color material chips, status badges). Research
+  keeps its status / prerequisite / remaining-time logic and the start-research
+  action; the Encyclopedia keeps all filters (name / category / input / output /
+  building) and now reads from the store instead of fetching its own data.
+
 ## [0.1.3] - 2026-08-08
 
 Phase 2 of the frontend rework: the consolidated Factory tab.
@@ -84,6 +106,7 @@ backward-compatible.
 - Supabase-backed game client API wrapper (`src/api/gameClient.ts`, `src/api/supabase.ts`).
 
 [Unreleased]: #unreleased
+[0.1.4]: #014---2026-08-08
 [0.1.3]: #013---2026-08-08
 [0.1.2]: #012---2026-08-08
 [0.1.1]: #011---2026-08-08
