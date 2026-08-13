@@ -174,7 +174,7 @@ export function DashboardPage() {
       {/* Storage meters */}
       <section className="ui-section">
         <div className="ui-section-title">Storage</div>
-        <div className="ui-stack">
+        <div className="ui-grid ui-grid--wide">
           <Card pad>
             <Meter label="Dry" pool="dry" icon="🧱 "
               capacity={player.player_dry_storage}
@@ -259,7 +259,7 @@ export function DashboardPage() {
                 {items.length === 0 ? (
                   <div className="ui-faint" style={{ fontSize: 'var(--fs-sm)' }}>Empty</div>
                 ) : (
-                  <div className="ui-cluster">
+                  <div className="mat-list">
                     {shown.map((mat) => {
                       const info = materialsCatalogue.get(mat.res_id);
                       return (

@@ -35,6 +35,8 @@
 
 .ui-stack { display: flex; flex-direction: column; gap: var(--sp-3); }
 .ui-cluster { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
+/* Vertical list of chips (one per row, natural width) — easier to scan on desktop. */
+.mat-list { display: flex; flex-direction: column; gap: var(--sp-1); align-items: flex-start; }
 .ui-row-between { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
 .ui-muted { color: var(--color-text-muted); }
 .ui-faint { color: var(--color-text-faint); }

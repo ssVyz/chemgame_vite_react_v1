@@ -19,8 +19,9 @@ Usability tweaks from testing.
 - Buildings now sort by build order (their instance id) in both the Dashboard
   and the Factory tab, so buildings built earlier always stay higher in the
   list instead of reordering unpredictably.
-- Dashboard storage meters (dry / fluid / gas) are stacked vertically into a
-  consistent list on desktop instead of laid out side by side.
+- Dashboard "In storage" materials are now listed vertically (one material
+  chip per row) instead of wrapping left-to-right, for easier scanning on
+  desktop.
 
 ### Added
 - Factory building cards now collapse the recipe (input/output) by default,
