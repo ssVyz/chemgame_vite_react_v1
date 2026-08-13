@@ -28,6 +28,23 @@
 .bcard__actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; }
 .bcard__autorun { font-size: var(--fs-xs); color: var(--color-text-muted); }
 
+/* Collapsible recipe summary row (collapsed by default) */
+.bcard__proc-toggle {
+  display: flex; align-items: center; gap: var(--sp-2);
+  width: 100%; text-align: left;
+  padding: var(--sp-2);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer; font: inherit; color: var(--color-text);
+}
+.bcard__proc-toggle:hover { border-color: var(--color-border-strong); }
+.bcard__proc-toggle strong {
+  flex: 1 1 auto; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.bcard__caret { flex: none; color: var(--color-text-muted); font-size: var(--fs-xs); font-weight: 600; }
+
 .runbox { display: inline-flex; align-items: center; gap: 4px; }
 .factory-input {
   font-family: var(--font-mono);

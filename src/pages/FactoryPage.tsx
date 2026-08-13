@@ -21,14 +21,27 @@ export function FactoryPage() {
   const [status, setStatus] = useState<ActionStatus | null>(null);
   const [picker, setPicker] = useState<Picker>(null);
   const [busy, setBusy] = useState(false);
+  // Which building cards have their recipe (input/output) expanded. Collapsed by default.
+  const [expandedRecipes, setExpandedRecipes] = useState<Set<number>>(new Set());
 
   const notify = (s: ActionStatus) => setStatus(s);
 
+  // Stable order: by build order (this_building_id ascending), so buildings
+  // built earlier always stay higher up in the list.
   const sortedBuildings = useMemo(
-    () => [...buildingsInventory].sort((a, b) =>
-      a.building_id - b.building_id || a.this_building_id - b.this_building_id),
+    () => [...buildingsInventory].sort((a, b) => a.this_building_id - b.this_building_id),
     [buildingsInventory],
   );
+
+  const toggleRecipe = (id: number) =>
+    setExpandedRecipes((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  const expandAllRecipes = () =>
+    setExpandedRecipes(new Set(buildingsInventory.filter((b) => b.b_proc_installed).map((b) => b.this_building_id)));
+  const collapseAllRecipes = () => setExpandedRecipes(new Set());
 
   const withProcess = useMemo(
     () => buildingsInventory.filter((b) => b.b_proc_installed),
@@ -85,6 +98,8 @@ export function FactoryPage() {
         <button className="ui-btn ui-btn--primary" onClick={() => setPicker({ kind: 'building' })}>＋ Build building</button>
         <button className="ui-btn" onClick={() => setPicker({ kind: 'storage' })}>＋ Storage extension</button>
         <span className="spacer" />
+        <button className="ui-btn ui-btn--sm" onClick={expandAllRecipes}>⊞ Expand recipes</button>
+        <button className="ui-btn ui-btn--sm" onClick={collapseAllRecipes}>⊟ Collapse recipes</button>
         <button className="ui-btn ui-btn--sm" onClick={autorunAll} disabled={busy}>🔄 Autorun all</button>
         <button className="ui-btn ui-btn--sm" onClick={autorunNone} disabled={busy}>⏹ Autorun none</button>
         <button className="ui-btn ui-btn--sm" onClick={uninstallAll} disabled={busy}>🗑 Uninstall all</button>
@@ -106,6 +121,8 @@ export function FactoryPage() {
           <div className="ui-grid ui-grid--wide">
             {sortedBuildings.map((b) => (
               <BuildingCard key={b.this_building_id} building={b}
+                expanded={expandedRecipes.has(b.this_building_id)}
+                onToggleRecipe={() => toggleRecipe(b.this_building_id)}
                 onInstall={(bld) => setPicker({ kind: 'process', building: bld })}
                 notify={notify} refresh={refreshPlayer} />
             ))}

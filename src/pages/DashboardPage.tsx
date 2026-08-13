@@ -59,6 +59,13 @@ export function DashboardPage() {
     return m;
   }, [processSchedule]);
 
+  // Stable order: by build order (this_building_id ascending), so buildings
+  // built earlier always stay higher up in the list.
+  const sortedBuildings = useMemo(
+    () => [...buildingsInventory].sort((a, b) => a.this_building_id - b.this_building_id),
+    [buildingsInventory],
+  );
+
   // Group inventory by storage pool, sorted by amount desc, filtered.
   const grouped = useMemo(() => {
     const q = filter.trim().toLowerCase();
@@ -167,7 +174,7 @@ export function DashboardPage() {
       {/* Storage meters */}
       <section className="ui-section">
         <div className="ui-section-title">Storage</div>
-        <div className="ui-grid ui-grid--wide">
+        <div className="ui-stack">
           <Card pad>
             <Meter label="Dry" pool="dry" icon="🧱 "
               capacity={player.player_dry_storage}
@@ -198,7 +205,7 @@ export function DashboardPage() {
           <Card pad><div className="ui-empty">No buildings yet — head to the Buildings tab to construct your first one.</div></Card>
         ) : (
           <div className="ui-grid ui-grid--cards">
-            {buildingsInventory.map((b) => {
+            {sortedBuildings.map((b) => {
               const cat = buildingsCatalogue.get(b.building_id);
               const proc = b.b_proc_installed ? processCatalogue.get(b.b_proc_installed) : undefined;
               const status = deriveBuildingStatus(b, scheduleByBuilding.get(b.this_building_id));

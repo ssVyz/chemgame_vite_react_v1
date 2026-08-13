@@ -11,6 +11,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-08-13
+
+Usability tweaks from testing.
+
+### Changed
+- Buildings now sort by build order (their instance id) in both the Dashboard
+  and the Factory tab, so buildings built earlier always stay higher in the
+  list instead of reordering unpredictably.
+- Dashboard storage meters (dry / fluid / gas) are stacked vertically into a
+  consistent list on desktop instead of laid out side by side.
+
+### Added
+- Factory building cards now collapse the recipe (input/output) by default,
+  showing a clickable process-summary row to expand it. New **Expand recipes**
+  / **Collapse recipes** toolbar buttons toggle them all at once.
+
 ## [0.1.4] - 2026-08-08
 
 Phase 3 of the frontend rework: cross-linked Research ↔ Process Encyclopedia (D4-A).
@@ -106,6 +122,7 @@ backward-compatible.
 - Supabase-backed game client API wrapper (`src/api/gameClient.ts`, `src/api/supabase.ts`).
 
 [Unreleased]: #unreleased
+[0.1.5]: #015---2026-08-13
 [0.1.4]: #014---2026-08-08
 [0.1.3]: #013---2026-08-08
 [0.1.2]: #012---2026-08-08

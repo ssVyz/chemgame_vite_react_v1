@@ -5,12 +5,15 @@ import type { PlayerBuilding } from '../../types';
 import { Card, Badge } from '../ui';
 import type { BadgeTone } from '../ui';
 import { RecipeCard } from './RecipeCard';
-import { buildingIcon } from '../../lib/icons';
+import { buildingIcon, processIcon } from '../../lib/icons';
 import { formatSeconds } from '../../lib/format';
 import type { ActionStatus } from '../../lib/status';
 
 interface Props {
   building: PlayerBuilding;
+  /** Whether the recipe (input/output) is expanded. Collapsed by default. */
+  expanded: boolean;
+  onToggleRecipe: () => void;
   onInstall: (b: PlayerBuilding) => void;
   notify: (s: ActionStatus) => void;
   refresh: () => Promise<void>;
@@ -22,7 +25,7 @@ function remainingLabel(endMs: number | null): string | null {
   return secs <= 0 ? 'ready' : formatSeconds(secs);
 }
 
-export function BuildingCard({ building: b, onInstall, notify, refresh }: Props) {
+export function BuildingCard({ building: b, expanded, onToggleRecipe, onInstall, notify, refresh }: Props) {
   const { buildingsCatalogue, processCatalogue, processSchedule } = useGame();
   const [runCount, setRunCount] = useState('1');
   const [busy, setBusy] = useState(false);
@@ -101,7 +104,12 @@ export function BuildingCard({ building: b, onInstall, notify, refresh }: Props)
         {!underConstruction && (
           hasProc && b.b_proc_installed ? (
             <>
-              <RecipeCard procId={b.b_proc_installed} />
+              <button type="button" className="bcard__proc-toggle" onClick={onToggleRecipe} aria-expanded={expanded}>
+                <span className="ui-icon ui-icon--sm">{processIcon(proc?.proc_category)}</span>
+                <strong>{proc?.proc_name ?? 'Process'}</strong>
+                <span className="bcard__caret">{expanded ? '▾ Hide recipe' : '▸ Show recipe'}</span>
+              </button>
+              {expanded && <RecipeCard procId={b.b_proc_installed} hideHeader />}
               <div className="bcard__actions">
                 <span className="runbox">
                   <input className="factory-input" type="number" min="1" value={runCount}
