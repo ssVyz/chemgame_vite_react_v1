@@ -10,6 +10,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { FactoryPage } from './pages/FactoryPage';
 import { ResearchPage } from './pages/ResearchPage';
 import { ProcessEncyclopediaPage } from './pages/ProcessEncyclopediaPage';
+import { ProcessChainPage } from './pages/ProcessChainPage';
 import { NpcBuyersPage } from './pages/NpcBuyersPage';
 import { MarketPage } from './pages/MarketPage';
 import { LeaderboardPage } from './pages/LeaderboardPage';
@@ -39,6 +40,7 @@ function App() {
                 <Route path="/processes" element={<Navigate to="/factory" replace />} />
                 <Route path="/research" element={<ResearchPage />} />
                 <Route path="/process-encyclopedia" element={<ProcessEncyclopediaPage />} />
+                <Route path="/process-chain" element={<ProcessChainPage />} />
                 <Route path="/npc-buyers" element={<NpcBuyersPage />} />
                 <Route path="/market" element={<MarketPage />} />
                 <Route path="/leaderboard" element={<LeaderboardPage />} />

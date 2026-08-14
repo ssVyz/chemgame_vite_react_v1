@@ -11,6 +11,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-08-14
+
+New **Process Chain** tab: a top-down flow map of what the factory can actually make.
+
+### Added
+- **🕸️ Chain** navigation tab (`/process-chain`) rendering the installed
+  processes as a layered material → process → material flow graph:
+  - **Input streams** at the top — processes that create material from nothing,
+    split into *extraction* (dig/collect/well) and *bought in*.
+  - **Sourced externally** materials highlighted: consumed by an installed
+    process but produced by none, i.e. what the factory cannot make for itself.
+  - **End products** highlighted: produced but consumed by nothing on the map,
+    with a marker when an NPC buyer exists for them.
+  - Live stock from the player inventory shown on every material node.
+  - Hover any node to light up everything up- and downstream of it; click to pin
+    a selection and see its recipe, producers and consumers in a side panel,
+    with a cross-link into the Process Encyclopedia.
+  - Zoom controls and fit-to-width.
+- Toggle **Show processes one step away**: previews (dashed) every process that
+  becomes runnable from the materials already on the map, with an optional
+  *researched only* filter.
+- Cycle handling for the chemistry's genuine recycle loops (lime slacking ↔
+  causticization ↔ lime kiln, the Leblanc soda cycle, Solvay ammonia, sand in
+  water purification): loop-closing edges are detected, excluded from layering
+  so every forward edge points downwards, and drawn as dashed return arrows. A
+  material a process both consumes and regenerates is folded onto the process
+  node as a ♻ badge instead of becoming an edge.
+
 ## [0.1.5] - 2026-08-13
 
 Usability tweaks from testing.
