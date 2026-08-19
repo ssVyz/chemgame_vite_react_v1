@@ -22,6 +22,10 @@ import type {
   PlayerTechnologyInventory,
   TechnologyPrerequisite,
   TechnologyResearchMaterial,
+  ClaimCatalogue,
+  ClaimOutputCatalogue,
+  PlayerClaim,
+  PlayerClaimOutput,
 } from '../types';
 import { AuthApiError, Session, User } from '@supabase/supabase-js';
 
@@ -862,6 +866,153 @@ class GameClient {
       }
 
       return { success: true, data: data as boolean };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  // ========================================================================
+  // Claims — reads
+  // ========================================================================
+
+  async get_claims_catalogue(): Promise<ApiResult<ClaimCatalogue[]>> {
+    try {
+      const { data, error } = await supabase.from('claims_catalogue').select('*');
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: data as ClaimCatalogue[] };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  async get_claims_outputs_catalogue(): Promise<ApiResult<ClaimOutputCatalogue[]>> {
+    try {
+      const { data, error } = await supabase.from('claims_outputs_catalogue').select('*');
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: data as ClaimOutputCatalogue[] };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  async get_player_claims(): Promise<ApiResult<PlayerClaim[]>> {
+    try {
+      // RLS restricts this to the current player's own rows.
+      const { data, error } = await supabase.from('player_claims_inventory').select('*');
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: data as PlayerClaim[] };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  async get_player_claims_outputs(): Promise<ApiResult<PlayerClaimOutput[]>> {
+    try {
+      const { data, error } = await supabase.from('player_claims_outputs').select('*');
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: data as PlayerClaimOutput[] };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  // ========================================================================
+  // Claims — actions
+  //
+  // The claim resolvers (survey reveal, cycle completion, autorun start) are
+  // service_role only and run on the 5-minute cron. There is deliberately no
+  // client method for them — the UI reports "waiting for the server" instead.
+  // ========================================================================
+
+  async find_claim(): Promise<ApiResult<PlayerClaim>> {
+    try {
+      const { data, error } = await supabase.rpc('find_claim');
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: data as PlayerClaim };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  async buy_claim(this_claim_id: number): Promise<ApiResult<PlayerClaim>> {
+    try {
+      const { data, error } = await supabase.rpc('buy_claim', {
+        p_this_claim_id: this_claim_id,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: data as PlayerClaim };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  async delete_claim(this_claim_id: number): Promise<ApiResult<unknown>> {
+    try {
+      const { data, error } = await supabase.rpc('delete_claim', {
+        p_this_claim_id: this_claim_id,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  async activate_claim_autorun(this_claim_id: number): Promise<ApiResult<PlayerClaim>> {
+    try {
+      const { data, error } = await supabase.rpc('activate_claim_autorun', {
+        p_this_claim_id: this_claim_id,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: data as PlayerClaim };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  async deactivate_claim_autorun(this_claim_id: number): Promise<ApiResult<PlayerClaim>> {
+    try {
+      const { data, error } = await supabase.rpc('deactivate_claim_autorun', {
+        p_this_claim_id: this_claim_id,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, data: data as PlayerClaim };
     } catch (e) {
       return { success: false, error: String(e) };
     }

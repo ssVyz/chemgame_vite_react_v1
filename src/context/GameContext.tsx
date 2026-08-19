@@ -20,6 +20,10 @@ import type {
   PlayerExpansion,
   ProcessSchedule,
   EventSchedule,
+  ClaimCatalogue,
+  ClaimOutputCatalogue,
+  PlayerClaim,
+  PlayerClaimOutput,
 } from '../types';
 
 interface Recipe {
@@ -34,6 +38,7 @@ interface GameContextType {
   materialsCatalogue: Map<number, MaterialCatalogue>;
   technologyCatalogue: Map<number, TechnologyCatalogue>;
   storageExtensionsCatalogue: Map<number, StorageExtensionCatalogue>;
+  claimsCatalogue: Map<number, ClaimCatalogue>;
   npcBuyers: NpcBuyer[];
 
   // Relations
@@ -42,6 +47,7 @@ interface GameContextType {
   allowedProcesses: Map<number, number[]>;       // building_id -> proc_id[]
   techRequired: Map<number, number[]>;           // tech_to_research -> required tech ids
   techResearchMaterials: Map<number, TechnologyResearchMaterial[]>; // tech_id -> materials
+  claimOutputsCatalogue: Map<number, ClaimOutputCatalogue[]>;      // claim_id -> outputs
 
   // Live player state
   player: Player | null;
@@ -52,6 +58,8 @@ interface GameContextType {
   expansion: PlayerExpansion | null;
   processSchedule: ProcessSchedule[];
   eventsSchedule: EventSchedule[];
+  playerClaims: PlayerClaim[];
+  claimOutputs: Map<number, PlayerClaimOutput[]>;  // this_claim_id -> outputs
   completedTechIds: Set<number>;
 
   // Flags
@@ -97,6 +105,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [materialsCatalogue, setMaterialsCatalogue] = useState<Map<number, MaterialCatalogue>>(new Map());
   const [technologyCatalogue, setTechnologyCatalogue] = useState<Map<number, TechnologyCatalogue>>(new Map());
   const [storageExtensionsCatalogue, setStorageExtensionsCatalogue] = useState<Map<number, StorageExtensionCatalogue>>(new Map());
+  const [claimsCatalogue, setClaimsCatalogue] = useState<Map<number, ClaimCatalogue>>(new Map());
   const [npcBuyers, setNpcBuyers] = useState<NpcBuyer[]>([]);
 
   // Relations
@@ -105,6 +114,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [allowedProcesses, setAllowedProcesses] = useState<Map<number, number[]>>(new Map());
   const [techRequired, setTechRequired] = useState<Map<number, number[]>>(new Map());
   const [techResearchMaterials, setTechResearchMaterials] = useState<Map<number, TechnologyResearchMaterial[]>>(new Map());
+  const [claimOutputsCatalogue, setClaimOutputsCatalogue] = useState<Map<number, ClaimOutputCatalogue[]>>(new Map());
 
   // Player state
   const [player, setPlayer] = useState<Player | null>(null);
@@ -115,6 +125,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [expansion, setExpansion] = useState<PlayerExpansion | null>(null);
   const [processSchedule, setProcessSchedule] = useState<ProcessSchedule[]>([]);
   const [eventsSchedule, setEventsSchedule] = useState<EventSchedule[]>([]);
+  const [playerClaims, setPlayerClaims] = useState<PlayerClaim[]>([]);
+  const [claimOutputs, setClaimOutputs] = useState<Map<number, PlayerClaimOutput[]>>(new Map());
 
   const [cataloguesLoaded, setCataloguesLoaded] = useState(false);
   const [playerLoaded, setPlayerLoaded] = useState(false);
@@ -124,6 +136,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const [
       buildings, processes, materials, tech, storageExt, npc,
       inputs, outputs, allowed, prereqs, researchMats,
+      claims, claimOuts,
     ] = await Promise.all([
       gameClient.get_buildings_catalogue(),
       gameClient.get_process_catalogue(),
@@ -136,6 +149,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       gameClient.get_all_buildings_allowed_processes(),
       gameClient.get_technology_prerequisites(),
       gameClient.get_technology_research_materials(),
+      gameClient.get_claims_catalogue(),
+      gameClient.get_claims_outputs_catalogue(),
     ]);
 
     if (buildings.success && buildings.data) setBuildingsCatalogue(indexBy(buildings.data, (b) => b.building_id));
@@ -167,6 +182,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     if (researchMats.success && researchMats.data) {
       setTechResearchMaterials(groupBy(researchMats.data, (r) => r.tech_id));
     }
+    if (claims.success && claims.data) setClaimsCatalogue(indexBy(claims.data, (c) => c.claim_id));
+    if (claimOuts.success && claimOuts.data) setClaimOutputsCatalogue(groupBy(claimOuts.data, (r) => r.claim_id));
 
     setCataloguesLoaded(true);
   }, []);
@@ -174,6 +191,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const loadPlayer = useCallback(async () => {
     const [
       playerRes, mats, builds, storageExt, techInv, exp, procSched, events,
+      claimsInv, playerClaimOuts,
     ] = await Promise.all([
       gameClient.get_player_data(),
       gameClient.get_player_materials(),
@@ -183,6 +201,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       gameClient.get_player_expansions(),
       gameClient.get_process_schedule(),
       gameClient.get_events_schedule(),
+      gameClient.get_player_claims(),
+      gameClient.get_player_claims_outputs(),
     ]);
 
     if (playerRes.success && playerRes.data) setPlayer(playerRes.data);
@@ -193,6 +213,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
     if (exp.success) setExpansion(exp.data ?? null);
     if (procSched.success && procSched.data) setProcessSchedule(procSched.data);
     if (events.success && events.data) setEventsSchedule(events.data);
+    if (claimsInv.success && claimsInv.data) setPlayerClaims(claimsInv.data);
+    if (playerClaimOuts.success && playerClaimOuts.data) {
+      setClaimOutputs(groupBy(playerClaimOuts.data, (r) => r.player_claim_id));
+    }
 
     setPlayerLoaded(true);
   }, []);
@@ -207,12 +231,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
       setMaterialsCatalogue(new Map());
       setTechnologyCatalogue(new Map());
       setStorageExtensionsCatalogue(new Map());
+      setClaimsCatalogue(new Map());
       setNpcBuyers([]);
       setProcessInputs(new Map());
       setProcessOutputs(new Map());
       setAllowedProcesses(new Map());
       setTechRequired(new Map());
       setTechResearchMaterials(new Map());
+      setClaimOutputsCatalogue(new Map());
       setPlayer(null);
       setMaterialsInventory([]);
       setBuildingsInventory([]);
@@ -221,6 +247,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
       setExpansion(null);
       setProcessSchedule([]);
       setEventsSchedule([]);
+      setPlayerClaims([]);
+      setClaimOutputs(new Map());
       setCataloguesLoaded(false);
       setPlayerLoaded(false);
     }
@@ -258,19 +286,23 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
     return {
       buildingsCatalogue, processCatalogue, materialsCatalogue, technologyCatalogue,
-      storageExtensionsCatalogue, npcBuyers,
+      storageExtensionsCatalogue, claimsCatalogue, npcBuyers,
       processInputs, processOutputs, allowedProcesses, techRequired, techResearchMaterials,
+      claimOutputsCatalogue,
       player, materialsInventory, buildingsInventory, storageExtensionsInventory,
-      technologyInventory, expansion, processSchedule, eventsSchedule, completedTechIds,
+      technologyInventory, expansion, processSchedule, eventsSchedule,
+      playerClaims, claimOutputs, completedTechIds,
       cataloguesLoaded, playerLoaded, lastRefresh,
       getRecipe, isBuildingUnlocked, isProcessUnlocked,
       refreshAll, refreshPlayer,
     };
   }, [
     buildingsCatalogue, processCatalogue, materialsCatalogue, technologyCatalogue,
-    storageExtensionsCatalogue, npcBuyers, processInputs, processOutputs, allowedProcesses,
-    techRequired, techResearchMaterials, player, materialsInventory, buildingsInventory, storageExtensionsInventory,
-    technologyInventory, expansion, processSchedule, eventsSchedule, completedTechIds,
+    storageExtensionsCatalogue, claimsCatalogue, npcBuyers, processInputs, processOutputs, allowedProcesses,
+    techRequired, techResearchMaterials, claimOutputsCatalogue,
+    player, materialsInventory, buildingsInventory, storageExtensionsInventory,
+    technologyInventory, expansion, processSchedule, eventsSchedule,
+    playerClaims, claimOutputs, completedTechIds,
     cataloguesLoaded, playerLoaded, lastRefresh, refreshAll, refreshPlayer,
   ]);
 

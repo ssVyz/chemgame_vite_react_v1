@@ -17,6 +17,7 @@ export interface Player {
   player_gas_storage: number;
   player_gas_storage_reserved: number;
   player_gas_storage_occupied: number;
+  max_claims: number;
 }
 
 export interface PlayerMaterial {
@@ -204,4 +205,53 @@ export interface TechnologyResearchMaterial {
     res_name: string;
     res_code: string;
   };
+}
+// ============================================================================
+// Claims
+// ============================================================================
+
+export interface ClaimCatalogue {
+  claim_id: number;
+  claim_code: string | null;
+  claim_name: string;
+  claim_price: number;
+  claim_rarity: number;   // 1 = common, 2 = rare, 3 = epic
+  exploit_cost: number;   // charged per mining cycle
+  cycle_duration: number; // minutes per mining cycle
+}
+
+export interface ClaimOutputCatalogue {
+  claim_output_id: number;
+  claim_id: number;
+  mat_id: number;
+  start_amount: number;    // size of the deposit at purchase
+  yield_per_cycle: number; // extracted per cycle, capped by what is left
+}
+
+export interface PlayerClaim {
+  this_claim_id: number;
+  created_at: string;
+  claim_id: number;
+  claim_visible: boolean;
+  claim_bought: boolean;
+  autorun: boolean;
+  claim_idle: boolean;
+  /**
+   * Multifunctional, exactly as in the database: the survey deadline before
+   * purchase, the cycle deadline while mining, and null for an owned claim
+   * sitting idle. Never read it without checking claim_bought / claim_idle
+   * first — see lib/claims.ts.
+   */
+  finishes_at: string | null;
+  dry_reserved: number | null;
+  fluid_reserved: number | null;
+  gas_reserved: number | null;
+}
+
+export interface PlayerClaimOutput {
+  this_output_id: number;
+  created_at: string;
+  player_claim_id: number;
+  mat_id: number;
+  amount_remaining: number;
 }

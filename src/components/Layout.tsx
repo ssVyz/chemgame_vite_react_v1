@@ -23,6 +23,9 @@ export function Layout() {
           <NavLink to="/factory" className={({ isActive }) => isActive ? 'active' : ''}>
             🏭 Factory
           </NavLink>
+          <NavLink to="/claims" className={({ isActive }) => isActive ? 'active' : ''}>
+            ⛏️ Claims
+          </NavLink>
           <NavLink to="/process-chain" className={({ isActive }) => isActive ? 'active' : ''}>
             🕸️ Chain
           </NavLink>

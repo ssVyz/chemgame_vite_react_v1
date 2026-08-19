@@ -8,6 +8,7 @@ import { NewPlayerReg } from './pages/NewPlayerReg';
 import { OnboardingPage } from './pages/OnboardingPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { FactoryPage } from './pages/FactoryPage';
+import { ClaimsPage } from './pages/ClaimsPage';
 import { ResearchPage } from './pages/ResearchPage';
 import { ProcessEncyclopediaPage } from './pages/ProcessEncyclopediaPage';
 import { ProcessChainPage } from './pages/ProcessChainPage';
@@ -35,6 +36,7 @@ function App() {
               <Route element={<Layout />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/factory" element={<FactoryPage />} />
+                <Route path="/claims" element={<ClaimsPage />} />
                 {/* Buildings + Processes consolidated into the Factory tab */}
                 <Route path="/buildings" element={<Navigate to="/factory" replace />} />
                 <Route path="/processes" element={<Navigate to="/factory" replace />} />

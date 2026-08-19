@@ -11,6 +11,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-08-19
+
+New **Claims** tab: prospect for mining sites, buy the promising ones, and let
+them extract materials on autorun.
+
+### Added
+- **⛏️ Claims** navigation tab (`/claims`), placed directly after Factory,
+  covering the full claim lifecycle:
+  - **Prospects** section for claims not yet owned — a surveying site shows only
+    a countdown (the rolled claim is deliberately not revealed client-side),
+    and once revealed shows its name, rarity, price, per-cycle cost and the
+    deposit on offer.
+  - **Your claims** section for owned sites, showing the deposit remaining
+    against its original size, per-material amounts, and an autorun toggle.
+  - **Find new claim** button gated on the same rules the database enforces —
+    a free `max_claims` slot and no undecided claim — with the blocking reason
+    shown up front instead of surfacing as an error after the click.
+  - Buy, discard and abandon actions, with confirmation prompts that state the
+    cost or what is being given up. Release is disabled mid-survey and
+    mid-cycle, matching `delete_claim()`.
+  - Claims whose timer has elapsed are labelled as waiting on the server: the
+    claim resolvers are `service_role` only and run on the 5-minute cron, so the
+    client cannot advance them.
+  - Countdown ticker that only runs while a survey or mining cycle is active.
+- `src/lib/claims.ts` — claim lifecycle helpers. `finishes_at` is multifunctional
+  in the database (survey deadline before purchase, cycle deadline after), so
+  `claimStage()` is the single place that interprets it and the rest of the UI
+  switches on the resulting stage.
+- Game client methods for the claims tables and RPCs: `get_claims_catalogue`,
+  `get_claims_outputs_catalogue`, `get_player_claims`, `get_player_claims_outputs`,
+  `find_claim`, `buy_claim`, `delete_claim`, `activate_claim_autorun`,
+  `deactivate_claim_autorun`.
+
+### Changed
+- `GameContext` now loads the claims catalogue and output templates alongside the
+  other catalogues, and the player's claims and claim outputs alongside the rest
+  of the player state, so `refreshPlayer()` keeps the Claims tab current.
+- `Player` type gained `max_claims`.
+
 ## [0.1.6] - 2026-08-14
 
 New **Process Chain** tab: a top-down flow map of what the factory can actually make.
